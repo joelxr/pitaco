@@ -8,11 +8,29 @@ require("pitaco").setup()
 
 local fewshot = require("pitaco.fewshot")
 
--- Create namespace for pitaco suggestions
 local pitacoNamespace = vim.api.nvim_create_namespace("pitaco")
 
-local function print(msg)
-	_G.print("Pitaco > " .. msg)
+local fidget = require("fidget")
+
+local function show_progress(title, message)
+    fidget.add_task({
+        title = title,
+        message = message,
+        percentage = 0,
+    })
+end
+
+local function update_progress(task, percentage, message)
+    fidget.update_task(task, {
+        percentage = percentage,
+        message = message,
+    })
+end
+
+local function complete_progress(task, message)
+    fidget.complete_task(task, {
+        message = message,
+    })
 end
 
 local function get_api_key()
@@ -197,15 +215,7 @@ local function parse_response(response, partNumberString, bufnr)
 				.. partNumberString
 		)
 	else
-		print(
-			"AI made "
-				.. #suggestions
-				.. " suggestion(s) using "
-				.. response.usage.total_tokens
-				.. " tokens from model "
-				.. get_model_id()
-				.. partNumberString
-		)
+		complete_progress(task, "AI made " .. #suggestions .. " suggestion(s) using " .. response.usage.total_tokens .. " tokens")
 	end
 
 	-- Act on each suggestion
@@ -272,15 +282,9 @@ local function backseat_send_from_request_queue(callbackTable)
 
 	if callbackTable.requestIndex == 0 then
 		if callbackTable.startingRequestCount == 1 then
-			print("Sending " .. bufname .. " (" .. callbackTable.lineCount .. " lines) and waiting for response...")
+			local task = show_progress("Pitaco", "Sending " .. bufname .. " (" .. callbackTable.lineCount .. " lines)")
 		else
-			print(
-				"Sending "
-					.. bufname
-					.. " (split into "
-					.. callbackTable.startingRequestCount
-					.. " requests) and waiting for response..."
-			)
+			local task = show_progress("Pitaco", "Sending " .. bufname .. " (split into " .. callbackTable.startingRequestCount .. " requests)")
 		end
 	end
 
