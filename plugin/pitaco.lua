@@ -7,28 +7,25 @@ vim.g.loaded_pitaco = true
 require("pitaco").setup()
 
 local fewshot = require("pitaco.fewshot")
-
 local pitacoNamespace = vim.api.nvim_create_namespace("pitaco")
-
 local fidget = require("fidget")
 
 local function show_progress(title, message)
-    fidget.add_task({
+    local task = fidget.create_task({
         title = title,
         message = message,
-        percentage = 0,
     })
+    return task
 end
 
-local function update_progress(task, percentage, message)
-    fidget.update_task(task, {
-        percentage = percentage,
+local function update_progress(task, message)
+    task:update({
         message = message,
     })
 end
 
 local function complete_progress(task, message)
-    fidget.complete_task(task, {
+    task:complete({
         message = message,
     })
 end
