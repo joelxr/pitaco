@@ -57,3 +57,5 @@ This project is licensed under the MIT License.
 ## Acknowledgments 🙏
 
 Thanks to the Neovim community and all contributors for their support.
+
+A big thanks to [james1236/backseat.nvim](https://github.com/james1236/backseat.nvim) for inspiration and guidance.
