@@ -8,24 +8,11 @@ local default_opts = {
 }
 
 function M.setup(opts)
-	-- Merge default_opts with opts
 	opts = vim.tbl_deep_extend("force", default_opts, opts or {})
-
-	-- if vim.g.backseat_openai_model_id == nil then
-	vim.g.backseat_openai_model_id = opts.openai_model_id
-	-- end
-
-	-- if vim.g.backseat_language == nil then
-	vim.g.backseat_language = opts.language
-	-- end
-
-	-- if vim.g.backseat_additional_instruction == nil then
-	vim.g.backseat_additional_instruction = opts.additional_instruction
-	-- end
-
-	-- if vim.g.backseat_split_threshold == nil then
-	vim.g.backseat_split_threshold = opts.split_threshold
-	-- end
+	vim.g.pitaco_openai_model_id = opts.openai_model_id
+	vim.g.pitaco_language = opts.language
+	vim.g.pitaco_additional_instruction = opts.additional_instruction
+	vim.g.pitaco_split_threshold = opts.split_threshold
 end
 
 return M

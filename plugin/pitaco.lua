@@ -21,6 +21,7 @@ end
 
 local function update_progress(handle, message, currentIndex, totalRequests)
 	local percentage = math.floor((currentIndex / totalRequests) * 100)
+
 	handle:report({
 		message = message,
 		percentage = percentage,
@@ -37,26 +38,31 @@ end
 
 local function get_api_key()
 	local key = os.getenv("OPENAI_API_KEY")
+
 	if key ~= nil then
 		return key
 	end
+
 	local message = "No API key found. Please set the $OPENAI_API_KEY environment variable."
 	vim.fn.confirm(message, "&OK", 1, "Warning")
 	return nil
 end
 
-local function get_model_id()
+local function get_model()
 	local model = vim.g.pitaco_openai_model_id
-	if model == nil then
-		if vim.g.pitaco_model_id_complained == nil then
-			local message =
-				"No model id specified. Please set openai_model_id in the setup table. Using default value for now"
-			vim.fn.confirm(message, "&OK", 1, "Warning")
-			vim.g.pitaco_model_id_complained = 1
-		end
-		return "gpt-4.1-mini"
+
+	if model ~= nil then
+		return model
 	end
-	return model
+
+	if vim.g.pitaco_model_id_complained == nil then
+		local message =
+			"No model specified. Please set openai_model_id in the setup table. Using default value for now"
+		vim.fn.confirm(message, "&OK", 1, "Warning")
+		vim.g.pitaco_model_id_complained = 1
+	end
+
+	return "gpt-4.1-mini"
 end
 
 local function get_language()
@@ -70,60 +76,30 @@ end
 local function get_split_threshold()
 	return vim.g.pitaco_split_threshold
 end
-
-local function split_long_text(text)
-	local lines = vim.split(text, "\n")
-	local screenWidth = vim.api.nvim_win_get_width(0) - 20
-	local newLines = {}
-	for _, line in ipairs(lines) do
-		if string.len(line) >= screenWidth then
-			local splitLines = vim.split(line, " ")
-			local currentLine = ""
-			for _, word in ipairs(splitLines) do
-				if string.len(currentLine) + string.len(word) > screenWidth then
-					table.insert(newLines, currentLine)
-					currentLine = word
-				else
-					currentLine = currentLine .. " " .. word
-				end
-			end
-			table.insert(newLines, currentLine)
-		else
-			table.insert(newLines, line)
-		end
-	end
-	return newLines
-end
-
 local function gpt_request(dataJSON, callback, callbackTable)
 	local api_key = get_api_key()
 	if api_key == nil then
 		return nil
 	end
 
-	-- Check if curl is installed
 	if vim.fn.executable("curl") == 0 then
 		vim.fn.confirm("curl installation not found. Please install curl to use pitaco", "&OK", 1, "Warning")
 		return nil
 	end
 
 	local curlRequest
-
-	-- Create temp file
 	local tempFilePath = vim.fn.tempname()
 	local tempFile = io.open(tempFilePath, "w")
+
 	if tempFile == nil then
 		print("Error creating temp file")
 		return nil
 	end
-	-- Write dataJSON to temp file
+
 	tempFile:write(dataJSON)
 	tempFile:close()
 
-	-- Escape the name of the temp file for command line
 	local tempFilePathEscaped = vim.fn.fnameescape(tempFilePath)
-
-	-- Check if the user is on windows
 	local isWindows = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
 
 	if isWindows ~= true then
@@ -150,8 +126,6 @@ local function gpt_request(dataJSON, callback, callbackTable)
 		)
 	end
 
-	-- vim.fn.confirm(curlRequest, "&OK", 1, "Warning")
-
 	vim.fn.jobstart(curlRequest, {
 		stdout_buffered = true,
 		on_stdout = function(_, data, _)
@@ -171,9 +145,7 @@ local function gpt_request(dataJSON, callback, callbackTable)
 				return nil
 			end
 
-			-- print(response)
 			callback(responseTable, callbackTable)
-			-- return response
 		end,
 		on_stderr = function(_, data, _)
 			return data
@@ -182,8 +154,6 @@ local function gpt_request(dataJSON, callback, callbackTable)
 			return data
 		end,
 	})
-
-	-- vim.cmd("sleep 10000m") -- Sleep to give time to read the error messages
 end
 
 local function parse_response(response, partNumberString, bufnr, callbackTable)
@@ -199,48 +169,27 @@ local function parse_response(response, partNumberString, bufnr, callbackTable)
 		end
 	end
 
-	if #suggestions == 0 then
-		print(
-			"AI Says: "
-				.. response.choices[1].message.content
-				.. " - Used "
-				.. response.usage.total_tokens
-				.. " tokens from model "
-				.. get_model_id()
-				.. partNumberString
-		)
-	else
+	if #suggestions ~= 0 then
 		complete_progress(
 			callbackTable.handle,
-			"AI made " .. #suggestions .. " suggestion(s) using " .. response.usage.total_tokens .. " tokens"
+			#suggestions .. " suggestion(s) using " .. response.usage.total_tokens .. " tokens"
 		)
 	end
 
-	-- Act on each suggestion
 	for _, suggestion in ipairs(suggestions) do
-		-- Get the line number
 		local lineString = string.sub(suggestion, 6, string.find(suggestion, ":") - 1)
-		-- The string may be in the format "line=1-3", so we can extract the first number
 		if string.find(lineString, "-") ~= nil then
 			lineString = string.sub(lineString, 1, string.find(lineString, "-") - 1)
 		end
 		local lineNum = tonumber(lineString)
 
 		if lineNum == nil then
-			-- print("Bad line number: " .. line)
-			-- If the line number is bad, just add the suggestion to the first line
 			lineNum = 1
-			-- goto continue
 		end
-		-- Get the message
 		local message = string.sub(suggestion, string.find(suggestion, ":") + 1, string.len(suggestion))
-		-- If the first character is a space, remove it
 		if string.sub(message, 1, 1) == " " then
 			message = string.sub(message, 2, string.len(message))
 		end
-		-- print("Line " .. lineNum .. ": " .. message)
-
-		-- Add suggestion as a diagnostic
 		table.insert(diagnostics, {
 			lnum = lineNum - 1,
 			col = 0,
@@ -254,12 +203,9 @@ local function parse_response(response, partNumberString, bufnr, callbackTable)
 end
 
 local function prepare_code_snippet(bufnr, startingLineNumber, endingLineNumber)
-	-- print("Preparing code snippet from lines " .. startingLineNumber .. " to " .. endingLineNumber)
 	local lines = vim.api.nvim_buf_get_lines(bufnr, startingLineNumber - 1, endingLineNumber, false)
-
-	-- Get the max number of digits needed to display a line number
 	local maxDigits = string.len(tostring(#lines + startingLineNumber))
-	-- Prepend each line with its line number zero padded to numDigits
+
 	for i, line in ipairs(lines) do
 		lines[i] = string.format("%0" .. maxDigits .. "d", i - 1 + startingLineNumber) .. " " .. line
 	end
@@ -274,24 +220,30 @@ local function pitaco_send_from_request_queue(callbackTable)
 		return nil
 	end
 
-	-- Get bufname without the path
 	local bufname = vim.fn.fnamemodify(vim.fn.bufname(callbackTable.bufnr), ":t")
-
 	local handle
+
 	if callbackTable.requestIndex == 0 then
 		if callbackTable.startingRequestCount == 1 then
 			handle = show_progress("Pitaco", "Sending " .. bufname .. " (" .. callbackTable.lineCount .. " lines)")
 		else
-			handle = show_progress("Pitaco", "Sending " .. bufname .. " (split into " .. callbackTable.startingRequestCount .. " requests)")
+			handle = show_progress(
+				"Pitaco",
+				"Sending " .. bufname .. " (split into " .. callbackTable.startingRequestCount .. " requests)"
+			)
 		end
 		callbackTable.handle = handle
 	end
 
-	-- Get the first request from the queue
 	local requestJSON = table.remove(callbackTable.requests, 1)
 	callbackTable.requestIndex = callbackTable.requestIndex + 1
 
-	update_progress(callbackTable.handle, "Processing request " .. callbackTable.requestIndex .. " of " .. callbackTable.startingRequestCount, callbackTable.requestIndex, callbackTable.startingRequestCount)
+	update_progress(
+		callbackTable.handle,
+		"Processing request " .. callbackTable.requestIndex .. " of " .. callbackTable.startingRequestCount,
+		callbackTable.requestIndex,
+		callbackTable.startingRequestCount
+	)
 	gpt_request(requestJSON, pitaco_callback, callbackTable)
 end
 
@@ -314,14 +266,12 @@ function pitaco_callback(responseTable, callbackTable)
 	end
 end
 
--- Send the current buffer to the AI for readability feedback
 vim.api.nvim_create_user_command("Pitaco", function()
-	-- Split the current buffer into groups of lines of size splitThreshold
 	local splitThreshold = get_split_threshold()
 	local bufnr = vim.api.nvim_get_current_buf()
 	local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
 	local numRequests = math.ceil(#lines / splitThreshold)
-	local model = get_model_id()
+	local model = get_model()
 
 	local requestTable = {
 		model = model,
@@ -329,10 +279,10 @@ vim.api.nvim_create_user_command("Pitaco", function()
 	}
 
 	local requests = {}
+
 	for i = 1, numRequests do
 		local startingLineNumber = (i - 1) * splitThreshold + 1
 		local text = prepare_code_snippet(bufnr, startingLineNumber, startingLineNumber + splitThreshold - 1)
-		-- print(text)
 
 		if get_additional_instruction() ~= "" then
 			text = text .. "\n" .. get_additional_instruction()
@@ -342,10 +292,8 @@ vim.api.nvim_create_user_command("Pitaco", function()
 			text = text .. "\nRespond only in " .. get_language() .. ", but keep the 'line=<num>:' part in english"
 		end
 
-		-- Make a copy of requestTable (value not reference)
 		local tempRequestTable = vim.deepcopy(requestTable)
 
-		-- Add the code snippet to the request
 		table.insert(tempRequestTable.messages, {
 			role = "user",
 			content = text,
@@ -364,8 +312,6 @@ vim.api.nvim_create_user_command("Pitaco", function()
 	})
 end, {})
 
-
--- Clear all pitaco diagnostics
 vim.api.nvim_create_user_command("PitacoClear", function()
 	local bufnr = vim.api.nvim_get_current_buf()
 	vim.diagnostic.reset(pitacoNamespace, bufnr)
