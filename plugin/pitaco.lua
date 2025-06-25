@@ -6,16 +6,6 @@ vim.g.loaded_pitaco = true
 
 require("pitaco").setup()
 
-require("fidget").setup({
-    text = {
-        spinner = "dots", -- animation for ongoing tasks
-        done = "✔", -- symbol for completed tasks
-    },
-    window = {
-        blend = 0, -- no transparency
-    },
-})
-
 local fewshot = require("pitaco.fewshot")
 local pitacoNamespace = vim.api.nvim_create_namespace("pitaco")
 local progress = require("fidget.progress")
@@ -25,6 +15,7 @@ local function show_progress(title, message)
 		title = title,
 		message = message,
 		percentage = 0,
+    lsp_client = { name = "pitaco" },
 	})
 	return handle
 end
