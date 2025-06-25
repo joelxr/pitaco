@@ -14,11 +14,6 @@ require("fidget").setup({
     window = {
         blend = 0, -- no transparency
     },
-    fmt = {
-        task = function(task_name, message, percentage)
-            return string.format("pitaco: %s [%s%%]", message, percentage)
-        end,
-    },
 })
 
 local fewshot = require("pitaco.fewshot")
