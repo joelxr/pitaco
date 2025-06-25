@@ -8,13 +8,18 @@ Welcome to the **Pitaco** Neovim plugin! This is an experimental plugin designed
 - **AI-Powered Suggestions**: Leverage AI to enhance your coding practices.
 - **Seamless Integration**: Works smoothly within Neovim.
 
+> **Note**: Pitaco uses the native Neovim diagnostics API, making it easy to integrate with other plugins such as `folke/trouble.nvim` for enhanced diagnostics visualization.
+
 ## Installation 📦
 
 To install Pitaco, use your preferred Neovim plugin manager. For example, with `lazy.nvim`:
 
 ```lua
 require('lazy').setup({
-    'yourusername/pitaco',
+    'joelxr/pitaco',
+    dependencies = {
+        'j-hui/fidget.nvim',
+    }
 })
 ```
 
