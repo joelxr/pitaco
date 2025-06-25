@@ -187,7 +187,7 @@ local function gpt_request(dataJSON, callback, callbackTable)
 	-- vim.cmd("sleep 10000m") -- Sleep to give time to read the error messages
 end
 
-local function parse_response(response, partNumberString, bufnr)
+local function parse_response(response, partNumberString, bufnr, callbackTable)
 	local diagnostics = {}
 	local lines = vim.split(response.choices[1].message.content, "\n")
 	local suggestions = {}
@@ -298,12 +298,13 @@ end
 function pitaco_callback(responseTable, callbackTable)
 	if responseTable ~= nil then
 		if callbackTable.startingRequestCount == 1 then
-			parse_response(responseTable, "", callbackTable.bufnr)
+			parse_response(responseTable, "", callbackTable.bufnr, callbackTable)
 		else
 			parse_response(
 				responseTable,
 				" (request " .. callbackTable.requestIndex .. " of " .. callbackTable.startingRequestCount .. ")",
-				callbackTable.bufnr
+				callbackTable.bufnr,
+				callbackTable
 			)
 		end
 	end
