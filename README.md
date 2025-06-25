@@ -4,7 +4,7 @@ Welcome to the **Pitaco** Neovim plugin! This is an experimental plugin designed
 
 ## Features ✨
 
-- **Instant Code Review**: Get feedback on your code as you write.
+- **Code Review**: Get feedback on your code.
 - **AI-Powered Suggestions**: Leverage AI to enhance your coding practices.
 - **Seamless Integration**: Works smoothly within Neovim.
 
