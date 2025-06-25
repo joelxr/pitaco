@@ -50,11 +50,11 @@ local function get_model_id()
 	if model == nil then
 		if vim.g.pitaco_model_id_complained == nil then
 			local message =
-				"No model id specified. Please set openai_model_id in the setup table. Defaulting to gpt-3.5-turbo for now" -- "gpt-4"
+				"No model id specified. Please set openai_model_id in the setup table. Using default value for now"
 			vim.fn.confirm(message, "&OK", 1, "Warning")
 			vim.g.pitaco_model_id_complained = 1
 		end
-		return "gpt-3.5-turbo"
+		return "gpt-4.1-mini"
 	end
 	return model
 end
@@ -73,9 +73,7 @@ end
 
 local function split_long_text(text)
 	local lines = vim.split(text, "\n")
-	-- Get the width of the screen
 	local screenWidth = vim.api.nvim_win_get_width(0) - 20
-	-- Split any suggestionLines that are too long
 	local newLines = {}
 	for _, line in ipairs(lines) do
 		if string.len(line) >= screenWidth then
@@ -366,56 +364,6 @@ vim.api.nvim_create_user_command("Pitaco", function()
 	})
 end, {})
 
--- Use the underlying chat API to ask a question about the current buffer's code
-local function pitaco_ask_callback(responseTable)
-	if responseTable == nil then
-		return nil
-	end
-	local message = "AI Says: " .. responseTable.choices[1].message.content
-
-	-- Split long messages into multiple lines
-	message = table.concat(split_long_text(message), "\r\n")
-
-	vim.fn.confirm(message, "&OK", 1, "Generic")
-end
-
-vim.api.nvim_create_user_command("PitacoAsk", function(opts)
-	local bufnr = vim.api.nvim_get_current_buf()
-	local text = prepare_code_snippet(bufnr, 1, -1)
-
-	if get_additional_instruction() ~= "" then
-		text = text .. "\n" .. get_additional_instruction()
-	end
-
-	if get_language() ~= "" and get_language() ~= "english" then
-		text = text .. "\nRespond only in " .. get_language()
-	end
-
-	local bufname = vim.fn.fnamemodify(vim.fn.bufname(bufnr), ":t")
-
-	print("Asking AI '" .. opts.args .. "' (in " .. bufname .. ")...")
-
-	gpt_request(
-		vim.json.encode({
-			model = get_model_id(),
-			messages = {
-				{
-					role = "system",
-					content = "You are a helpful assistant who can respond to questions about the following code. You can also act as a regular assistant",
-				},
-				{
-					role = "user",
-					content = text,
-				},
-				{
-					role = "user",
-					content = opts.args,
-				},
-			},
-		}),
-		pitaco_ask_callback
-	)
-end, { nargs = "+" })
 
 -- Clear all pitaco diagnostics
 vim.api.nvim_create_user_command("PitacoClear", function()
