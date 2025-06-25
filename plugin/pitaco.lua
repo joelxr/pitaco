@@ -8,30 +8,30 @@ require("pitaco").setup()
 
 require("fidget").setup({
     text = {
-        spinner = "dots", -- or any other spinner you prefer
-        done = "✔", -- or any other symbol you prefer
+        spinner = "dots", -- animation for ongoing tasks
+        done = "✔", -- symbol for completed tasks
     },
     align = {
-        bottom = true,
+        bottom = true, -- align fidgets along the bottom
     },
     window = {
-        relative = "editor",
-        blend = 0,
-        zindex = nil,
-        border = "none",
+        relative = "editor", -- position relative to the editor
+        blend = 0, -- no transparency
+        zindex = nil, -- use default zindex
+        border = "none", -- no border
     },
     fmt = {
         task = function(task_name, message, percentage)
-            return string.format("%s: %s [%s%%]", "pitaco", message, percentage)
+            return string.format("pitaco: %s [%s%%]", message, percentage)
         end,
     },
     sources = {
         ["*"] = {
-            ignore = false,
+            ignore = false, -- do not ignore any sources
         },
     },
     debug = {
-        logging = false,
+        logging = false, -- disable logging
     },
 })
 
