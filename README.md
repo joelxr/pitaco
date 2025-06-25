@@ -16,7 +16,7 @@ To install Pitaco, use your preferred Neovim plugin manager. For example, with `
 
 ```lua
 require('lazy').setup({
-    'joelxr/pitaco',
+    'joelxr/pitaco.nvim',
     dependencies = {
         'j-hui/fidget.nvim',
     }
