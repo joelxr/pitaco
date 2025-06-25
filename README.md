@@ -4,27 +4,29 @@ Welcome to the **Pitaco** Neovim plugin! This is an experimental plugin designed
 
 ## Features ✨
 
-- **Instant Code Review**: Get immediate feedback on your code as you write.
+- **Instant Code Review**: Get feedback on your code as you write.
 - **AI-Powered Suggestions**: Leverage AI to enhance your coding practices.
 - **Seamless Integration**: Works smoothly within Neovim.
 
 ## Installation 📦
 
-To install Pitaco, use your preferred Neovim plugin manager. For example, with `vim-plug`:
+To install Pitaco, use your preferred Neovim plugin manager. For example, with `lazy.nvim`:
 
-```vim
-Plug 'yourusername/pitaco'
+```lua
+require('lazy').setup({
+    'yourusername/pitaco',
+})
 ```
 
-Then, run `:PlugInstall` in Neovim.
+Then, restart Neovim and run `:Lazy install`.
 
 ## Usage 🛠️
 
 Once installed, you can use the following commands to interact with Pitaco:
 
-- `:PitacoReview` - Start a code review session.
-- `:PitacoFeedback` - Get feedback on the current buffer.
-- `:PitacoSettings` - Open the settings for Pitaco.
+- `:Pitaco` - Ask Pitaco to review your code.
+- `:PitacoClear` - Clear the current review.
+- `:PitacoClearLine` - Clear the current review for the current line.
 
 ## Configuration ⚙️
 
@@ -32,8 +34,10 @@ You can configure Pitaco by adding the following to your Neovim configuration fi
 
 ```lua
 require('pitaco').setup({
-    apiKey = 'your-openai-api-key',
-    model = 'gpt-4.1-mini',
+	openai_model_id = "gpt-4.1-mini",
+	language = "english",
+	additional_instruction = nil,
+	split_threshold = 100,
 })
 ```
 
