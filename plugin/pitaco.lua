@@ -8,25 +8,29 @@ require("pitaco").setup()
 
 local fewshot = require("pitaco.fewshot")
 local pitacoNamespace = vim.api.nvim_create_namespace("pitaco")
-local fidget = require("fidget")
+local progress = require("fidget.progress")
 
 local function show_progress(title, message)
-    local task = fidget.create_task({
+    local handle = progress.handle.create({
         title = title,
         message = message,
+        percentage = 0,
     })
-    return task
+    return handle
 end
 
-local function update_progress(task, message)
-    task:update({
+local function update_progress(handle, message, percentage)
+    handle:report({
         message = message,
+        percentage = percentage,
     })
 end
 
-local function complete_progress(task, message)
-    task:complete({
+local function complete_progress(handle, message)
+    handle:finish()
+    handle:report({
         message = message,
+        percentage = 100,
     })
 end
 
@@ -212,7 +216,7 @@ local function parse_response(response, partNumberString, bufnr)
 				.. partNumberString
 		)
 	else
-		complete_progress(task, "AI made " .. #suggestions .. " suggestion(s) using " .. response.usage.total_tokens .. " tokens")
+		complete_progress(handle, "AI made " .. #suggestions .. " suggestion(s) using " .. response.usage.total_tokens .. " tokens")
 	end
 
 	-- Act on each suggestion
@@ -279,9 +283,9 @@ local function backseat_send_from_request_queue(callbackTable)
 
 	if callbackTable.requestIndex == 0 then
 		if callbackTable.startingRequestCount == 1 then
-			local task = show_progress("Pitaco", "Sending " .. bufname .. " (" .. callbackTable.lineCount .. " lines)")
+			local handle = show_progress("Pitaco", "Sending " .. bufname .. " (" .. callbackTable.lineCount .. " lines)")
 		else
-			local task = show_progress("Pitaco", "Sending " .. bufname .. " (split into " .. callbackTable.startingRequestCount .. " requests)")
+			local handle = show_progress("Pitaco", "Sending " .. bufname .. " (split into " .. callbackTable.startingRequestCount .. " requests)")
 		end
 	end
 
