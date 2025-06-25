@@ -35,6 +35,14 @@ Once installed, you can use the following commands to interact with Pitaco:
 
 ## Configuration ⚙️
 
+To use Pitaco, you need to set the `OPENAI_API_KEY` environment variable. This key is required to authenticate requests to the OpenAI API. You can set it in your shell configuration file (e.g., `.bashrc`, `.zshrc`):
+
+```bash
+export OPENAI_API_KEY="your-openai-api-key"
+```
+
+> **Disclaimer**: Currently, Pitaco only supports OpenAI models. However, support for additional models is planned in the roadmap.
+
 You can configure Pitaco by adding the following to your Neovim configuration file:
 
 ```lua
