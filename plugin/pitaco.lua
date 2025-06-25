@@ -11,27 +11,27 @@ local pitacoNamespace = vim.api.nvim_create_namespace("pitaco")
 local progress = require("fidget.progress")
 
 local function show_progress(title, message)
-    local handle = progress.handle.create({
-        title = title,
-        message = message,
-        percentage = 0,
-    })
-    return handle
+	local handle = progress.handle.create({
+		title = title,
+		message = message,
+		percentage = 0,
+	})
+	return handle
 end
 
 local function update_progress(handle, message, percentage)
-    handle:report({
-        message = message,
-        percentage = percentage,
-    })
+	handle:report({
+		message = message,
+		percentage = percentage,
+	})
 end
 
 local function complete_progress(handle, message)
-    handle:finish()
-    handle:report({
-        message = message,
-        percentage = 100,
-    })
+	handle:finish()
+	handle:report({
+		message = message,
+		percentage = 100,
+	})
 end
 
 local function get_api_key()
@@ -45,13 +45,13 @@ local function get_api_key()
 end
 
 local function get_model_id()
-	local model = vim.g.backseat_openai_model_id
+	local model = vim.g.pitaco_openai_model_id
 	if model == nil then
-		if vim.g.backseat_model_id_complained == nil then
+		if vim.g.pitaco_model_id_complained == nil then
 			local message =
 				"No model id specified. Please set openai_model_id in the setup table. Defaulting to gpt-3.5-turbo for now" -- "gpt-4"
 			vim.fn.confirm(message, "&OK", 1, "Warning")
-			vim.g.backseat_model_id_complained = 1
+			vim.g.pitaco_model_id_complained = 1
 		end
 		return "gpt-3.5-turbo"
 	end
@@ -59,15 +59,15 @@ local function get_model_id()
 end
 
 local function get_language()
-	return vim.g.backseat_language
+	return vim.g.pitaco_language
 end
 
 local function get_additional_instruction()
-	return vim.g.backseat_additional_instruction or ""
+	return vim.g.pitaco_additional_instruction or ""
 end
 
 local function get_split_threshold()
-	return vim.g.backseat_split_threshold
+	return vim.g.pitaco_split_threshold
 end
 
 local function split_long_text(text)
@@ -104,7 +104,7 @@ local function gpt_request(dataJSON, callback, callbackTable)
 
 	-- Check if curl is installed
 	if vim.fn.executable("curl") == 0 then
-		vim.fn.confirm("curl installation not found. Please install curl to use Backseat", "&OK", 1, "Warning")
+		vim.fn.confirm("curl installation not found. Please install curl to use pitaco", "&OK", 1, "Warning")
 		return nil
 	end
 
@@ -189,18 +189,13 @@ end
 
 local function parse_response(response, partNumberString, bufnr)
 	local diagnostics = {}
-	-- split response.choices[1].message.content into lines
 	local lines = vim.split(response.choices[1].message.content, "\n")
-	--Suggestions may span multiple lines, so we need to change the list of lines into a list of suggestions
 	local suggestions = {}
 
-	-- Add each line to the suggestions table if it starts with line= or lines=
 	for _, line in ipairs(lines) do
 		if (string.sub(line, 1, 5) == "line=") or string.sub(line, 1, 6) == "lines=" then
-			-- Add this line to the suggestions table
 			table.insert(suggestions, line)
 		elseif #suggestions > 0 then
-			-- Append lines that don't start with line= or lines= to the previous suggestion
 			suggestions[#suggestions] = suggestions[#suggestions] .. "\n" .. line
 		end
 	end
@@ -216,7 +211,10 @@ local function parse_response(response, partNumberString, bufnr)
 				.. partNumberString
 		)
 	else
-		complete_progress(handle, "AI made " .. #suggestions .. " suggestion(s) using " .. response.usage.total_tokens .. " tokens")
+		complete_progress(
+			callbackTable.handle,
+			"AI made " .. #suggestions .. " suggestion(s) using " .. response.usage.total_tokens .. " tokens"
+		)
 	end
 
 	-- Act on each suggestion
@@ -249,7 +247,7 @@ local function parse_response(response, partNumberString, bufnr)
 			col = 0,
 			message = message,
 			severity = vim.diagnostic.severity.INFO,
-			source = "backseat",
+			source = "pitaco",
 		})
 	end
 
@@ -271,9 +269,8 @@ local function prepare_code_snippet(bufnr, startingLineNumber, endingLineNumber)
 	return text
 end
 
-local backseat_callback
-local function backseat_send_from_request_queue(callbackTable)
-	-- Stop if there are no more requests in the queue
+local pitaco_callback
+local function pitaco_send_from_request_queue(callbackTable)
 	if #callbackTable.requests == 0 then
 		return nil
 	end
@@ -281,23 +278,24 @@ local function backseat_send_from_request_queue(callbackTable)
 	-- Get bufname without the path
 	local bufname = vim.fn.fnamemodify(vim.fn.bufname(callbackTable.bufnr), ":t")
 
+	local handle
 	if callbackTable.requestIndex == 0 then
 		if callbackTable.startingRequestCount == 1 then
-			local handle = show_progress("Pitaco", "Sending " .. bufname .. " (" .. callbackTable.lineCount .. " lines)")
+			handle = show_progress("Pitaco", "Sending " .. bufname .. " (" .. callbackTable.lineCount .. " lines)")
 		else
-			local handle = show_progress("Pitaco", "Sending " .. bufname .. " (split into " .. callbackTable.startingRequestCount .. " requests)")
+			handle = show_progress("Pitaco", "Sending " .. bufname .. " (split into " .. callbackTable.startingRequestCount .. " requests)")
 		end
+		callbackTable.handle = handle
 	end
 
 	-- Get the first request from the queue
 	local requestJSON = table.remove(callbackTable.requests, 1)
 	callbackTable.requestIndex = callbackTable.requestIndex + 1
 
-	gpt_request(requestJSON, backseat_callback, callbackTable)
+	gpt_request(requestJSON, pitaco_callback, callbackTable)
 end
 
--- Callback for a backseat request
-function backseat_callback(responseTable, callbackTable)
+function pitaco_callback(responseTable, callbackTable)
 	if responseTable ~= nil then
 		if callbackTable.startingRequestCount == 1 then
 			parse_response(responseTable, "", callbackTable.bufnr)
@@ -311,7 +309,7 @@ function backseat_callback(responseTable, callbackTable)
 	end
 
 	if callbackTable.requestIndex < callbackTable.startingRequestCount + 1 then
-		backseat_send_from_request_queue(callbackTable)
+		pitaco_send_from_request_queue(callbackTable)
 	end
 end
 
@@ -357,7 +355,7 @@ vim.api.nvim_create_user_command("Pitaco", function()
 		-- print(requestJSON)
 	end
 
-	backseat_send_from_request_queue({
+	pitaco_send_from_request_queue({
 		requests = requests,
 		startingRequestCount = numRequests,
 		requestIndex = 0,
@@ -367,7 +365,7 @@ vim.api.nvim_create_user_command("Pitaco", function()
 end, {})
 
 -- Use the underlying chat API to ask a question about the current buffer's code
-local function backseat_ask_callback(responseTable)
+local function pitaco_ask_callback(responseTable)
 	if responseTable == nil then
 		return nil
 	end
@@ -413,19 +411,18 @@ vim.api.nvim_create_user_command("PitacoAsk", function(opts)
 				},
 			},
 		}),
-		backseat_ask_callback
+		pitaco_ask_callback
 	)
 end, { nargs = "+" })
 
--- Clear all backseat diagnostics
+-- Clear all pitaco diagnostics
 vim.api.nvim_create_user_command("PitacoClear", function()
 	local bufnr = vim.api.nvim_get_current_buf()
-	vim.diagnostic.reset(backseatNamespace, bufnr)
+	vim.diagnostic.reset(pitacoNamespace, bufnr)
 end, {})
 
--- Clear backseat diagnostics for that line
 vim.api.nvim_create_user_command("PitacoClearLine", function()
 	local bufnr = vim.api.nvim_get_current_buf()
 	local lineNum = vim.api.nvim_win_get_cursor(0)[1]
-	vim.diagnostic.set(backseatNamespace, bufnr, {}, { lnum = lineNum - 1 })
+	vim.diagnostic.set(pitacoNamespace, bufnr, {}, { lnum = lineNum - 1 })
 end, {})
