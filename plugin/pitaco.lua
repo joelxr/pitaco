@@ -10,8 +10,6 @@ require("fidget").setup({
     text = {
         spinner = "dots", -- or any other spinner you prefer
         done = "✔", -- or any other symbol you prefer
-        commenced = "Starting...",
-        completed = "Completed",
     },
     align = {
         bottom = true,
@@ -26,6 +24,14 @@ require("fidget").setup({
         task = function(task_name, message, percentage)
             return string.format("%s: %s [%s%%]", "pitaco", message, percentage)
         end,
+    },
+    sources = {
+        ["*"] = {
+            ignore = false,
+        },
+    },
+    debug = {
+        logging = false,
     },
 })
 
@@ -79,8 +85,7 @@ local function get_model()
 	end
 
 	if vim.g.pitaco_model_id_complained == nil then
-		local message =
-			"No model specified. Please set openai_model_id in the setup table. Using default value for now"
+		local message = "No model specified. Please set openai_model_id in the setup table. Using default value for now"
 		vim.fn.confirm(message, "&OK", 1, "Warning")
 		vim.g.pitaco_model_id_complained = 1
 	end
