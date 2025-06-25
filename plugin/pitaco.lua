@@ -19,7 +19,8 @@ local function show_progress(title, message)
 	return handle
 end
 
-local function update_progress(handle, message, percentage)
+local function update_progress(handle, message, currentIndex, totalRequests)
+	local percentage = math.floor((currentIndex / totalRequests) * 100)
 	handle:report({
 		message = message,
 		percentage = percentage,
@@ -292,6 +293,7 @@ local function pitaco_send_from_request_queue(callbackTable)
 	local requestJSON = table.remove(callbackTable.requests, 1)
 	callbackTable.requestIndex = callbackTable.requestIndex + 1
 
+	update_progress(callbackTable.handle, "Processing request " .. callbackTable.requestIndex .. " of " .. callbackTable.startingRequestCount, callbackTable.requestIndex, callbackTable.startingRequestCount)
 	gpt_request(requestJSON, pitaco_callback, callbackTable)
 end
 
@@ -353,7 +355,6 @@ vim.api.nvim_create_user_command("Pitaco", function()
 
 		local requestJSON = vim.json.encode(tempRequestTable)
 		requests[i] = requestJSON
-		-- print(requestJSON)
 	end
 
 	pitaco_send_from_request_queue({
