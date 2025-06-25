@@ -6,6 +6,29 @@ vim.g.loaded_pitaco = true
 
 require("pitaco").setup()
 
+require("fidget").setup({
+    text = {
+        spinner = "dots", -- or any other spinner you prefer
+        done = "✔", -- or any other symbol you prefer
+        commenced = "Starting...",
+        completed = "Completed",
+    },
+    align = {
+        bottom = true,
+    },
+    window = {
+        relative = "editor",
+        blend = 0,
+        zindex = nil,
+        border = "none",
+    },
+    fmt = {
+        task = function(task_name, message, percentage)
+            return string.format("%s: %s [%s%%]", "pitaco", message, percentage)
+        end,
+    },
+})
+
 local fewshot = require("pitaco.fewshot")
 local pitacoNamespace = vim.api.nvim_create_namespace("pitaco")
 local progress = require("fidget.progress")
