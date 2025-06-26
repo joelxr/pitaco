@@ -1,5 +1,5 @@
 local M = {}
-local Job = require('plenary.job')
+local curl = require("plenary.curl")
 
 local function get_api_key()
 	local key = os.getenv("OPENAI_API_KEY")
@@ -15,25 +15,22 @@ end
 
 function M.gpt_request(dataJSON, callback, callbackTable)
 	local api_key = get_api_key()
+
 	if api_key == nil then
 		return nil
 	end
 
-	Job:new({
-		command = 'curl',
-		args = {
-			'-s',
-			'https://api.openai.com/v1/chat/completions',
-			'-H', 'Content-Type: application/json',
-			'-H', 'Authorization: Bearer ' .. api_key,
-			'--data-binary', dataJSON
+	curl.post("https://api.openai.com/v1/chat/completions", {
+		headers = {
+			["Content-Type"] = "application/json",
+			["Authorization"] = "Bearer " .. api_key,
 		},
-		on_exit = function(j, return_val)
-			local response = table.concat(j:result(), "\n")
-			local success, responseTable = pcall(vim.json.decode, response)
-
+		body = dataJSON,
+		callback = function(response)
+			local responseBody = response.body
+			local success, responseTable = pcall(vim.json.decode, responseBody)
 			if not success or not responseTable then
-				print("Bad or no response: " .. (response or "nil"))
+				print("Bad or no response: " .. (responseBody or "nil"))
 				return
 			end
 
@@ -44,7 +41,7 @@ function M.gpt_request(dataJSON, callback, callbackTable)
 
 			callback(responseTable, callbackTable)
 		end,
-	}):start()
+	})
 end
 
 return M
