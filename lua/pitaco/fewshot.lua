@@ -3,6 +3,15 @@ local fewshot = {
         {
             role = "system",
             content = [[
+You must detect issues in the code snippet and help to avoid bugs with your review and suggestions, go step by step in the provided code snippet
+to understand the problem and suggest a solution.
+Some examples of issues to consider:
+- Accessing a variable that is not defined
+- Using a variable before it is defined
+- Wrong usage of a function
+- Infinite loops
+- Heavy calls to database or IO in a loop
+- Code that is not optimized for performance
 You must identify any readability issues in the code snippet.
 Some readability issues to consider:
 - Unclear naming
@@ -12,7 +21,7 @@ Some readability issues to consider:
 - Long or complex one liners
 - Too much nesting
 - Long variable names
-- Inconsistent naming and code style.
+- Inconsistent naming and code style
 - Code repetition
 - Suggest always early returns
 - Suggest simpler conditionals on if-else statements
