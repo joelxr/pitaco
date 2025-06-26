@@ -1,4 +1,5 @@
 local M = {}
+local Job = require('plenary.job')
 
 local function get_api_key()
 	local key = os.getenv("OPENAI_API_KEY")
@@ -18,78 +19,32 @@ function M.gpt_request(dataJSON, callback, callbackTable)
 		return nil
 	end
 
-	if vim.fn.executable("curl") == 0 then
-		vim.fn.confirm("curl installation not found. Please install curl to use pitaco", "&OK", 1, "Warning")
-		return nil
-	end
-
-	local curlRequest
-	local tempFilePath = vim.fn.tempname()
-	local tempFile = io.open(tempFilePath, "w")
-
-	if tempFile == nil then
-		print("Error creating temp file")
-		return nil
-	end
-
-	tempFile:write(dataJSON)
-	tempFile:close()
-
-	local tempFilePathEscaped = vim.fn.fnameescape(tempFilePath)
-	local isWindows = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
-
-	if isWindows ~= true then
-		-- Linux
-		curlRequest = string.format(
-			'curl -s https://api.openai.com/v1/chat/completions -H "Content-Type: application/json" -H "Authorization: Bearer '
-				.. api_key
-				.. '" --data-binary "@'
-				.. tempFilePathEscaped
-				.. '"; rm '
-				.. tempFilePathEscaped
-				.. " > /dev/null 2>&1"
-		)
-	else
-		-- Windows
-		curlRequest = string.format(
-			'curl -s https://api.openai.com/v1/chat/completions -H "Content-Type: application/json" -H "Authorization: Bearer '
-				.. api_key
-				.. '" --data-binary "@'
-				.. tempFilePathEscaped
-				.. '" & del '
-				.. tempFilePathEscaped
-				.. " > nul 2>&1"
-		)
-	end
-
-	vim.fn.jobstart(curlRequest, {
-		stdout_buffered = true,
-		on_stdout = function(_, data, _)
-			local response = table.concat(data, "\n")
+	Job:new({
+		command = 'curl',
+		args = {
+			'-s',
+			'https://api.openai.com/v1/chat/completions',
+			'-H', 'Content-Type: application/json',
+			'-H', 'Authorization: Bearer ' .. api_key,
+			'--data-binary', dataJSON
+		},
+		on_exit = function(j, return_val)
+			local response = table.concat(j:result(), "\n")
 			local success, responseTable = pcall(vim.json.decode, response)
 
-			if success == false or responseTable == nil then
-				if response == nil then
-					response = "nil"
-				end
-				print("Bad or no response: " .. response)
-				return nil
+			if not success or not responseTable then
+				print("Bad or no response: " .. (response or "nil"))
+				return
 			end
 
-			if responseTable.error ~= nil then
+			if responseTable.error then
 				print("OpenAI Error: " .. responseTable.error.message)
-				return nil
+				return
 			end
 
 			callback(responseTable, callbackTable)
 		end,
-		on_stderr = function(_, data, _)
-			return data
-		end,
-		on_exit = function(_, data, _)
-			return data
-		end,
-	})
+	}):start()
 end
 
 return M
