@@ -124,6 +124,58 @@ line=8: The error message could be more descriptive, e.g., 'Failed to fetch data
 line=1: The interface 'User' is well-defined, but consider adding comments to describe each property.
 line=7: The function 'createUser' is clear, but consider adding JSDoc comments to describe its parameters and return type.
 line=9: The error message could be more informative, e.g., 'User creation failed: Name and email are required fields'.]]
+        },
+        {
+            role = "user",
+            content = [[
+01 function accessProperty(obj) {
+02     return obj.property.toUpperCase();
+03 }
+04 
+05 const result = accessProperty(undefined);
+06 console.log(result);]]
+        },
+        {
+            role = "assistant",
+            content = [[
+line=2: Attempting to access 'property' on 'obj' will throw an error if 'obj' is undefined. Consider adding a check to ensure 'obj' is defined before accessing its properties.
+line=5: Passing 'undefined' to 'accessProperty' will cause an error. Ensure that 'obj' is defined before calling 'accessProperty'.]]
+        },
+        {
+            role = "user",
+            content = [[
+01 function fetchData(url) {
+02     for (let i = 0; i < 1000; i++) {
+03         fetch(url)
+04             .then(response => response.json())
+05             .then(data => console.log(data))
+06             .catch(error => console.error('Error:', error));
+07     }
+08 }]]
+        },
+        {
+            role = "assistant",
+            content = [[
+line=2: Making 1000 fetch requests in a loop can lead to performance issues and server overload. Consider batching requests or using a more efficient approach.
+line=5: Avoid using console.log for production code. Consider using a logging library or removing it after debugging.]]
+        },
+        {
+            role = "user",
+            content = [[
+01 function calculateFactorial(n) {
+02     if (n < 0) return -1;
+03     if (n === 0) return 1;
+04     return n * calculateFactorial(n - 1);
+05 }
+06 
+07 const result = calculateFactorial(100000);
+08 console.log(result);]]
+        },
+        {
+            role = "assistant",
+            content = [[
+line=4: Recursive calls with large input like 100000 can lead to a stack overflow. Consider using an iterative approach for large inputs.
+line=8: Avoid using console.log for production code. Consider using a logging library or removing it after debugging.]]
         }
     }
 }
