@@ -12,7 +12,7 @@ function M.get_split_threshold()
 	return vim.g.pitaco_split_threshold
 end
 
-function M.get_model()
+function M.get_openai_model()
 	local model = vim.g.pitaco_openai_model_id
 
 	if model ~= nil then

@@ -14,7 +14,7 @@ function M.review()
 	local buffer_number = utils.get_buffer_number()
 
 	local request_table = {
-		model = config.get_model(),
+		model = config.get_openai_model(),
 		messages = fewshot.messages,
 	}
 
