@@ -20,7 +20,7 @@ function M.gpt_request(dataJSON)
 		return nil
 	end
 
-	curl.post("https://api.openai.com/v1/chat/completions", {
+	return curl.post("https://api.openai.com/v1/chat/completions", {
 		headers = {
 			["Content-Type"] = "application/json",
 			["Authorization"] = "Bearer " .. api_key,
