@@ -13,7 +13,7 @@ local function get_api_key()
 	return nil
 end
 
-function M.gpt_request(dataJSON, callback, callbackTable)
+function M.gpt_request(dataJSON)
 	local api_key = get_api_key()
 
 	if api_key == nil then
@@ -39,7 +39,9 @@ function M.gpt_request(dataJSON, callback, callbackTable)
 				return
 			end
 
-			callback(responseTable, callbackTable)
+			-- Handle the response directly here
+			-- Example: print the response or process it as needed
+			print(vim.inspect(responseTable))
 		end,
 	})
 end
