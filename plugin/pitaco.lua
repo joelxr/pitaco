@@ -10,38 +10,9 @@ pitaco.setup()
 
 local pitaco_namespace = vim.api.nvim_create_namespace("pitaco")
 local fewshot = require("pitaco.fewshot")
-local progress = require("fidget.progress")
+local progress = require("pitaco.progress")
 local openai = require("pitaco.openai")
 local config = require("pitaco.config")
-
-local function show_progress(title, message)
-	local handle = progress.handle.create({
-		title = title,
-		message = message,
-		percentage = 0,
-		lsp_client = { name = "pitaco" },
-	})
-	return handle
-end
-
-local function update_progress(handle, message, current_index, total_requests)
-	local percentage = math.floor((current_index / total_requests) * 100)
-
-	handle:report({
-		message = message,
-		percentage = percentage,
-	})
-end
-
-local function complete_progress(handle, message)
-	handle:finish()
-	handle:report({
-		message = message,
-		percentage = 100,
-	})
-end
-
--- can all _progress functions be moved to a single file? AI!
 
 local function parse_response(response, buf_nr, callback_table)
 	local diagnostics = {}
