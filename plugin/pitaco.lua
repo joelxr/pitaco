@@ -41,6 +41,8 @@ local function complete_progress(handle, message)
 	})
 end
 
+-- can all _progress functions be moved to a single file? AI!
+
 local function parse_response(response, buf_nr, callback_table)
 	local diagnostics = {}
 	local lines = vim.split(response.choices[1].message.content, "\n")
@@ -130,6 +132,7 @@ local function pitaco_send_from_request_queue(callback_table)
 	)
 
 	local response_table = openai.request(request_json)
+
 	if response_table then
 		parse_response(response_table, callback_table.buf_nr, callback_table)
 	end
