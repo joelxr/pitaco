@@ -13,6 +13,7 @@ local fewshot = require("pitaco.fewshot")
 local progress = require("pitaco.progress")
 local openai = require("pitaco.openai")
 local config = require("pitaco.config")
+local utils = require("pitaco.utils")
 
 local function parse_response(response, buffer_number, callback_table)
 	local lines = vim.split(response.choices[1].message.content, "\n")
@@ -58,19 +59,6 @@ local function parse_response(response, buffer_number, callback_table)
 	end
 
 	vim.diagnostic.set(pitaco_namespace, buffer_number, diagnostics, {})
-end
-
--- move the prepare_code_snippet function to a file AI!
-local function prepare_code_snippet(buf_nr, starting_line_number, ending_line_number)
-	local lines = vim.api.nvim_buf_get_lines(buf_nr, starting_line_number - 1, ending_line_number, false)
-	local max_digits = string.len(tostring(#lines + starting_line_number))
-
-	for i, line in ipairs(lines) do
-		lines[i] = string.format("%0" .. max_digits .. "d", i - 1 + starting_line_number) .. " " .. line
-	end
-
-	local text = table.concat(lines, "\n")
-	return text
 end
 
 local function pitaco_send_from_request_queue(callback_table)
@@ -129,7 +117,7 @@ vim.api.nvim_create_user_command("Pitaco", function()
 
     for i = 1, num_requests do
         local starting_line_number = (i - 1) * split_threshold + 1
-        local text = utils.prepare_code_snippet(buf_nr, starting_line_number, starting_line_number + split_threshold - 1)
+        local text = prepare_code_snippet(buf_nr, starting_line_number, starting_line_number + split_threshold - 1)
         local language = config.get_language()
         local additional_instruction = config.get_additional_instruction()
 
