@@ -1,8 +1,8 @@
 local M = {}
 
-local pitaco_namespace = vim.api.nvim_create_namespace("pitaco")
+local namespace = vim.api.nvim_create_namespace("pitaco")
 local fewshot = require("pitaco.fewshot")
-local openai = require("pitaco.openai")
+local openai = require("pitaco.providers.openai")
 local config = require("pitaco.config")
 local utils = require("pitaco.utils")
 local requests = require("pitaco.requests")
@@ -12,29 +12,10 @@ function M.review()
 	local language = config.get_language()
 	local additional_instruction = config.get_additional_instruction()
 	local buffer_number = utils.get_buffer_number()
-  local provider = config.get_provider()
-  local model
-  local messages
-  local system
+  local model = config.get_model()
 
-  if provider == "openai" then
-    model = config.get_openai_model()
-		messages = vim.deepcopy(fewshot.messages)
-    table.insert(messages, 1, {
-      role = "system",
-      content = config.get_system_prompt(),
-    })
-  elseif provider == "anthropic" then
-    model = config.get_anthropic_model()
-    system = config.get_system_prompt()
-  else
-    print("Invalid provider: " .. provider)
-    return
-  end
-
-	local request_table = {
+  local request_table = {
 		model = model,
-    system = system,
 		messages = fewshot.messages,
 	}
 
@@ -42,7 +23,7 @@ function M.review()
 		requests.prepare_requests(buffer_number, split_threshold, language, additional_instruction, request_table)
 
 	requests.make_requests({
-		namespace = pitaco_namespace,
+		namespace = namespace,
 		requests = all_requests,
 		starting_request_count = num_requests,
 		request_index = 0,
@@ -53,13 +34,13 @@ end
 
 function M.clear()
 	local buffer_number = utils.get_buffer_number()
-	vim.diagnostic.reset(pitaco_namespace, buffer_number)
+	vim.diagnostic.reset(namespace, buffer_number)
 end
 
 function M.clear_line()
 	local buffer_number = utils.get_buffer_number()
 	local line_num = vim.api.nvim_win_get_cursor(0)[1]
-	vim.diagnostic.set(pitaco_namespace, buffer_number, {}, { lnum = line_num - 1 })
+	vim.diagnostic.set(namespace, buffer_number, {}, { lnum = line_num - 1 })
 end
 
 return M

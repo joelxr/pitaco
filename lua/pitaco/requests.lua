@@ -1,8 +1,4 @@
 local progress = require("pitaco.progress")
-local config = require("pitaco.config")
-local utils = require("pitaco.utils")
-local openai = require("pitaco.openai")
-local anthropic = require("pitaco.anthropic")
 
 local M = {}
 
@@ -51,6 +47,9 @@ function M.parse_response(response, params)
 
 	vim.diagnostic.set(params.namespace, params.buf_nr, diagnostics, {})
 end
+
+local utils = require("pitaco.utils")
+local openai = require("pitaco.providers.openai")
 
 function M.prepare_requests(buf_nr, split_threshold, language, additional_instruction, request_table)
 	local lines = vim.api.nvim_buf_get_lines(buf_nr, 0, -1, false)
@@ -102,17 +101,7 @@ function M.make_requests(params)
 	)
 
 	vim.defer_fn(function()
-    local provider = config.get_provider()
-    local response
-
-    if provider == "openai" then
-      response = openai.request(request_json)
-    elseif provider == "anthropic" then
-      response = anthropic.request(request_json)
-    else
-      print("Invalid provider: " .. provider)
-      return
-    end
+		local response = openai.request(request_json)
 
 		if response then
 			M.parse_response(response, params)
