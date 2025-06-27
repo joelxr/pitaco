@@ -14,79 +14,34 @@ local progress = require("pitaco.progress")
 local openai = require("pitaco.openai")
 local config = require("pitaco.config")
 local utils = require("pitaco.utils")
-
-local function parse_response(response, buffer_number, params)
-	local lines = vim.split(response.choices[1].message.content, "\n")
-	local diagnostics = {}
-	local suggestions = {}
-
-	for _, line in ipairs(lines) do
-		if (string.sub(line, 1, 5) == "line=") or string.sub(line, 1, 6) == "lines=" then
-			table.insert(suggestions, line)
-		elseif #suggestions > 0 then
-			suggestions[#suggestions] = suggestions[#suggestions] .. "\n" .. line
-		end
-	end
-
-	if #suggestions ~= 0 then
-		progress.complete_progress(
-			params.handle,
-			#suggestions .. " suggestion(s) using " .. response.usage.total_tokens .. " tokens"
-		)
-	end
-
-	for _, suggestion in ipairs(suggestions) do
-		local line_string = string.sub(suggestion, 6, string.find(suggestion, ":") - 1)
-		if string.find(line_string, "-") ~= nil then
-			line_string = string.sub(line_string, 1, string.find(line_string, "-") - 1)
-		end
-		local line_num = tonumber(line_string)
-
-		if line_num == nil then
-			line_num = 1
-		end
-		local message = string.sub(suggestion, string.find(suggestion, ":") + 1, string.len(suggestion))
-		if string.sub(message, 1, 1) == " " then
-			message = string.sub(message, 2, string.len(message))
-		end
-		table.insert(diagnostics, {
-			lnum = line_num - 1,
-			col = 0,
-			message = message,
-			severity = vim.diagnostic.severity.INFO,
-			source = "pitaco",
-		})
-	end
-
-	vim.diagnostic.set(pitaco_namespace, buffer_number, diagnostics, {})
-end
+local requests = require("pitaco.requests")
 
 local function make_requests(params)
 	if #params.requests == 0 then
 		return nil
 	end
 
-	progress.show_buffer_progress(params)
+    progress.show_buffer_progress(params)
 
-	local request_json = table.remove(params.requests, 1)
-	params.request_index = params.request_index + 1
+    local request_json = table.remove(params.requests, 1)
+    params.request_index = params.request_index + 1
 
-	progress.update_progress(
-		params.handle,
-		"Processing request " .. params.request_index .. " of " .. params.starting_request_count,
-		params.request_index,
-		params.starting_request_count
-	)
+    progress.update_progress(
+        params.handle,
+        "Processing request " .. params.request_index .. " of " .. params.starting_request_count,
+        params.request_index,
+        params.starting_request_count
+    )
 
-	local response = openai.request(request_json)
+    local response = openai.request(request_json)
 
-	if response then
-		parse_response(response, params.buf_nr, params)
-	end
+    if response then
+        requests.parse_response(response, params.buf_nr, params)
+    end
 
-	if params.request_index < params.starting_request_count + 1 then
-		make_requests(params)
-	end
+    if params.request_index < params.starting_request_count + 1 then
+        make_requests(params)
+    end
 end
 
 local function prepare_requests(buf_nr, split_threshold, language, additional_instruction, request_table)
