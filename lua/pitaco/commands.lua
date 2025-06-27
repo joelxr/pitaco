@@ -32,12 +32,12 @@ function M.review()
 end
 
 function M.clear()
-  local buffer_number = utils.get_buffer_number()
+	local buffer_number = utils.get_buffer_number()
 	vim.diagnostic.reset(pitaco_namespace, buffer_number)
 end
 
 function M.clear_line()
-  local buffer_number = utils.get_buffer_number()
+	local buffer_number = utils.get_buffer_number()
 	local line_num = vim.api.nvim_win_get_cursor(0)[1]
 	vim.diagnostic.set(pitaco_namespace, buffer_number, {}, { lnum = line_num - 1 })
 end
