@@ -66,8 +66,7 @@ local function make_requests(params)
 		return nil
 	end
 
-	local buf_name = utils.get_buf_name(params.buf_nr)
-	progress.initialize_progress(params, buf_name)
+	progress.show_buffer_progress(params)
 
 	local request_json = table.remove(params.requests, 1)
 	params.request_index = params.request_index + 1
@@ -90,25 +89,14 @@ local function make_requests(params)
 	end
 end
 
-vim.api.nvim_create_user_command("Pitaco", function()
-	local split_threshold = config.get_split_threshold()
-  local language = config.get_language()
-  local additional_instruction = config.get_additional_instruction()
-	local buf_nr = vim.api.nvim_get_current_buf()
+local function prepare_requests(buf_nr, split_threshold, language, additional_instruction, request_table)
 	local lines = vim.api.nvim_buf_get_lines(buf_nr, 0, -1, false)
 	local num_requests = math.ceil(#lines / split_threshold)
-
-	local request_table = {
-		model = openai.get_model(),
-		messages = fewshot.messages,
-	}
-
 	local requests = {}
 
 	for i = 1, num_requests do
 		local starting_line_number = (i - 1) * split_threshold + 1
-		local text =
-			utils.prepare_code_snippet(buf_nr, starting_line_number, starting_line_number + split_threshold - 1)
+		local text = utils.prepare_code_snippet(buf_nr, starting_line_number, starting_line_number + split_threshold - 1)
 
 		if additional_instruction ~= "" then
 			text = text .. "\n" .. additional_instruction
@@ -129,12 +117,28 @@ vim.api.nvim_create_user_command("Pitaco", function()
 		requests[i] = request_json
 	end
 
+	return requests, num_requests, #lines
+end
+
+vim.api.nvim_create_user_command("Pitaco", function()
+	local split_threshold = config.get_split_threshold()
+	local language = config.get_language()
+	local additional_instruction = config.get_additional_instruction()
+	local buf_nr = vim.api.nvim_get_current_buf()
+
+	local request_table = {
+		model = openai.get_model(),
+		messages = fewshot.messages,
+	}
+
+	local requests, num_requests, line_count = prepare_requests(buf_nr, split_threshold, language, additional_instruction, request_table)
+
 	make_requests({
 		requests = requests,
 		starting_request_count = num_requests,
 		request_index = 0,
 		buf_nr = buf_nr,
-		line_count = #lines,
+		line_count = line_count,
 	})
 end, {})
 
