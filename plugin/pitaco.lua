@@ -1,3 +1,8 @@
+-- This is a plugin for the Neovim text editor
+-- Author: Joel
+-- License: MIT
+-- Source: https://github.com/joelxr/pitaco
+
 if vim.g.loaded_pitaco then
 	return
 end

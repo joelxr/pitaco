@@ -1,4 +1,8 @@
 local progress = require("pitaco.progress")
+local config = require("pitaco.config")
+local utils = require("pitaco.utils")
+local openai = require("pitaco.providers.openai")
+local fewshot = require("pitaco.fewshot")
 
 local M = {}
 
@@ -45,21 +49,27 @@ function M.parse_response(response, params)
 		})
 	end
 
-	vim.diagnostic.set(params.namespace, params.buf_nr, diagnostics, {})
+	vim.diagnostic.set(params.namespace, utils.get_buffer_number(), diagnostics, {})
 end
 
-local utils = require("pitaco.utils")
-local openai = require("pitaco.providers.openai")
-
-function M.prepare_requests(buf_nr, split_threshold, language, additional_instruction, request_table)
-	local lines = vim.api.nvim_buf_get_lines(buf_nr, 0, -1, false)
+function M.prepare_requests()
+  local model = config.get_model()
+  local buffer_number = utils.get_buffer_number()
+  local split_threshold = config.get_split_threshold()
+  local language = config.get_language()
+  local additional_instruction = config.get_additional_instruction()
+	local lines = vim.api.nvim_buf_get_lines(buffer_number, 0, -1, false)
 	local num_requests = math.ceil(#lines / split_threshold)
 	local all_requests = {}
+  local request_table = {
+    model = model,
+    messages = fewshot.messages,
+  }
 
 	for i = 1, num_requests do
 		local starting_line_number = (i - 1) * split_threshold + 1
 		local text =
-			utils.prepare_code_snippet(buf_nr, starting_line_number, starting_line_number + split_threshold - 1)
+			utils.prepare_code_snippet(buffer_number, starting_line_number, starting_line_number + split_threshold - 1)
 
 		if additional_instruction ~= "" then
 			text = text .. "\n" .. additional_instruction
