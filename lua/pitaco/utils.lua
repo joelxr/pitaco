@@ -12,4 +12,8 @@ function M.prepare_code_snippet(buf_nr, starting_line_number, ending_line_number
     return text
 end
 
+function M.get_buf_name(buf_nr)
+    return vim.fn.fnamemodify(vim.fn.bufname(buf_nr), ":t")
+end
+
 return M
