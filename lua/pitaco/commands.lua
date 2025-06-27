@@ -14,7 +14,7 @@ function M.review()
 	local buffer_number = utils.get_buffer_number()
 
 	local request_table = {
-		model = openai.get_model(),
+		model = config.get_model(),
 		messages = fewshot.messages,
 	}
 
@@ -32,14 +32,14 @@ function M.review()
 end
 
 function M.clear()
-	local buf_nr = vim.api.nvim_get_current_buf()
-	vim.diagnostic.reset(pitaco_namespace, buf_nr)
+  local buffer_number = utils.get_buffer_number()
+	vim.diagnostic.reset(pitaco_namespace, buffer_number)
 end
 
 function M.clear_line()
-	local buf_nr = vim.api.nvim_get_current_buf()
+  local buffer_number = utils.get_buffer_number()
 	local line_num = vim.api.nvim_win_get_cursor(0)[1]
-	vim.diagnostic.set(pitaco_namespace, buf_nr, {}, { lnum = line_num - 1 })
+	vim.diagnostic.set(pitaco_namespace, buffer_number, {}, { lnum = line_num - 1 })
 end
 
 return M
