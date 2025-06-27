@@ -120,35 +120,39 @@ local function prepare_requests(buf_nr, split_threshold, language, additional_in
 	return requests, num_requests, #lines
 end
 
-vim.api.nvim_create_user_command("Pitaco", function()
+local function pitaco_command()
 	local split_threshold = config.get_split_threshold()
 	local language = config.get_language()
 	local additional_instruction = config.get_additional_instruction()
-	local buf_nr = vim.api.nvim_get_current_buf()
+	local buffer_number = vim.api.nvim_get_current_buf()
 
 	local request_table = {
 		model = openai.get_model(),
 		messages = fewshot.messages,
 	}
 
-	local requests, num_requests, line_count = prepare_requests(buf_nr, split_threshold, language, additional_instruction, request_table)
+	local requests, num_requests, line_count = prepare_requests(buffer_number, split_threshold, language, additional_instruction, request_table)
 
 	make_requests({
 		requests = requests,
 		starting_request_count = num_requests,
 		request_index = 0,
-		buf_nr = buf_nr,
+		buf_nr = buffer_number,
 		line_count = line_count,
 	})
-end, {})
+end
 
-vim.api.nvim_create_user_command("PitacoClear", function()
+local function pitaco_clear_command()
 	local buf_nr = vim.api.nvim_get_current_buf()
 	vim.diagnostic.reset(pitaco_namespace, buf_nr)
-end, {})
+end
 
-vim.api.nvim_create_user_command("PitacoClearLine", function()
+local function pitaco_clear_line_command()
 	local buf_nr = vim.api.nvim_get_current_buf()
 	local line_num = vim.api.nvim_win_get_cursor(0)[1]
 	vim.diagnostic.set(pitaco_namespace, buf_nr, {}, { lnum = line_num - 1 })
-end, {})
+end
+
+vim.api.nvim_create_user_command("Pitaco", pitaco_command, {})
+vim.api.nvim_create_user_command("PitacoClear", pitaco_clear_command, {})
+vim.api.nvim_create_user_command("PitacoClearLine", pitaco_clear_line_command, {})
