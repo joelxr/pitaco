@@ -129,7 +129,7 @@ function M.make_requests(namespace, requests, starting_request_count, request_in
 			})
 		end
 
-		if params.request_index < params.starting_request_count + 1 then
+		if request_index < starting_request_count + 1 then
 			M.make_requests(namespace, requests, starting_request_count, request_index, line_count)
 		end
 	end, 100)

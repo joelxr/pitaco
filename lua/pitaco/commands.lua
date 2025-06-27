@@ -6,14 +6,7 @@ local requests = require("pitaco.requests")
 
 function M.review()
 	local all_requests, num_requests, line_count = requests.prepare_requests()
-
-	requests.make_requests({
-		namespace = namespace,
-		requests = all_requests,
-		starting_request_count = num_requests,
-		request_index = 0,
-		line_count = line_count,
-	})
+  requests.make_requests(namespace, all_requests, num_requests, 0, line_count)
 end
 
 function M.clear()
