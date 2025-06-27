@@ -4,18 +4,22 @@ end
 
 vim.g.loaded_pitaco = true
 
-require("pitaco").setup()
+local pitaco = require("pitaco")
 
-local fewshot = require("pitaco.fewshot")
+pitaco.setup()
+
 local pitacoNamespace = vim.api.nvim_create_namespace("pitaco")
+local fewshot = require("pitaco.fewshot")
 local progress = require("fidget.progress")
+local openai = require("pitaco.openai")
+local config = require("pitaco.config")
 
 local function show_progress(title, message)
 	local handle = progress.handle.create({
 		title = title,
 		message = message,
 		percentage = 0,
-    lsp_client = { name = "pitaco" },
+		lsp_client = { name = "pitaco" },
 	})
 	return handle
 end
@@ -37,126 +41,7 @@ local function complete_progress(handle, message)
 	})
 end
 
-local function get_api_key()
-	local key = os.getenv("OPENAI_API_KEY")
-
-	if key ~= nil then
-		return key
-	end
-
-	local message = "No API key found. Please set the $OPENAI_API_KEY environment variable."
-	vim.fn.confirm(message, "&OK", 1, "Warning")
-	return nil
-end
-
-local function get_model()
-	local model = vim.g.pitaco_openai_model_id
-
-	if model ~= nil then
-		return model
-	end
-
-	if vim.g.pitaco_model_id_complained == nil then
-		local message = "No model specified. Please set openai_model_id in the setup table. Using default value for now"
-		vim.fn.confirm(message, "&OK", 1, "Warning")
-		vim.g.pitaco_model_id_complained = 1
-	end
-
-	return "gpt-4.1-mini"
-end
-
-local function get_language()
-	return vim.g.pitaco_language
-end
-
-local function get_additional_instruction()
-	return vim.g.pitaco_additional_instruction or ""
-end
-
-local function get_split_threshold()
-	return vim.g.pitaco_split_threshold
-end
-local function gpt_request(dataJSON, callback, callbackTable)
-	local api_key = get_api_key()
-	if api_key == nil then
-		return nil
-	end
-
-	if vim.fn.executable("curl") == 0 then
-		vim.fn.confirm("curl installation not found. Please install curl to use pitaco", "&OK", 1, "Warning")
-		return nil
-	end
-
-	local curlRequest
-	local tempFilePath = vim.fn.tempname()
-	local tempFile = io.open(tempFilePath, "w")
-
-	if tempFile == nil then
-		print("Error creating temp file")
-		return nil
-	end
-
-	tempFile:write(dataJSON)
-	tempFile:close()
-
-	local tempFilePathEscaped = vim.fn.fnameescape(tempFilePath)
-	local isWindows = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
-
-	if isWindows ~= true then
-		-- Linux
-		curlRequest = string.format(
-			'curl -s https://api.openai.com/v1/chat/completions -H "Content-Type: application/json" -H "Authorization: Bearer '
-				.. api_key
-				.. '" --data-binary "@'
-				.. tempFilePathEscaped
-				.. '"; rm '
-				.. tempFilePathEscaped
-				.. " > /dev/null 2>&1"
-		)
-	else
-		-- Windows
-		curlRequest = string.format(
-			'curl -s https://api.openai.com/v1/chat/completions -H "Content-Type: application/json" -H "Authorization: Bearer '
-				.. api_key
-				.. '" --data-binary "@'
-				.. tempFilePathEscaped
-				.. '" & del '
-				.. tempFilePathEscaped
-				.. " > nul 2>&1"
-		)
-	end
-
-	vim.fn.jobstart(curlRequest, {
-		stdout_buffered = true,
-		on_stdout = function(_, data, _)
-			local response = table.concat(data, "\n")
-			local success, responseTable = pcall(vim.json.decode, response)
-
-			if success == false or responseTable == nil then
-				if response == nil then
-					response = "nil"
-				end
-				print("Bad or no response: " .. response)
-				return nil
-			end
-
-			if responseTable.error ~= nil then
-				print("OpenAI Error: " .. responseTable.error.message)
-				return nil
-			end
-
-			callback(responseTable, callbackTable)
-		end,
-		on_stderr = function(_, data, _)
-			return data
-		end,
-		on_exit = function(_, data, _)
-			return data
-		end,
-	})
-end
-
-local function parse_response(response, partNumberString, bufnr, callbackTable)
+local function parse_response(response, bufnr, callbackTable)
 	local diagnostics = {}
 	local lines = vim.split(response.choices[1].message.content, "\n")
 	local suggestions = {}
@@ -244,20 +129,17 @@ local function pitaco_send_from_request_queue(callbackTable)
 		callbackTable.requestIndex,
 		callbackTable.startingRequestCount
 	)
-	gpt_request(requestJSON, pitaco_callback, callbackTable)
+
+	local response = openai.request(requestJSON)
+	pitaco_callback(response, callbackTable)
 end
 
 function pitaco_callback(responseTable, callbackTable)
 	if responseTable ~= nil then
 		if callbackTable.startingRequestCount == 1 then
-			parse_response(responseTable, "", callbackTable.bufnr, callbackTable)
+			parse_response(responseTable, callbackTable.bufnr, callbackTable)
 		else
-			parse_response(
-				responseTable,
-				" (request " .. callbackTable.requestIndex .. " of " .. callbackTable.startingRequestCount .. ")",
-				callbackTable.bufnr,
-				callbackTable
-			)
+			parse_response(responseTable, callbackTable.bufnr, callbackTable)
 		end
 	end
 
@@ -267,14 +149,13 @@ function pitaco_callback(responseTable, callbackTable)
 end
 
 vim.api.nvim_create_user_command("Pitaco", function()
-	local splitThreshold = get_split_threshold()
+	local splitThreshold = config.get_split_threshold()
 	local bufnr = vim.api.nvim_get_current_buf()
 	local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
 	local numRequests = math.ceil(#lines / splitThreshold)
-	local model = get_model()
 
 	local requestTable = {
-		model = model,
+		model = openai.get_model(),
 		messages = fewshot.messages,
 	}
 
@@ -283,13 +164,15 @@ vim.api.nvim_create_user_command("Pitaco", function()
 	for i = 1, numRequests do
 		local startingLineNumber = (i - 1) * splitThreshold + 1
 		local text = prepare_code_snippet(bufnr, startingLineNumber, startingLineNumber + splitThreshold - 1)
+		local language = config.get_language()
+		local additional_instruction = config.get_additional_instruction()
 
-		if get_additional_instruction() ~= "" then
-			text = text .. "\n" .. get_additional_instruction()
+		if additional_instruction ~= "" then
+			text = text .. "\n" .. additional_instruction
 		end
 
-		if get_language() ~= "" and get_language() ~= "english" then
-			text = text .. "\nRespond only in " .. get_language() .. ", but keep the 'line=<num>:' part in english"
+		if language ~= "" and language ~= "english" then
+			text = text .. "\nRespond only in " .. language .. ", but keep the 'line=<num>:' part in english"
 		end
 
 		local tempRequestTable = vim.deepcopy(requestTable)
