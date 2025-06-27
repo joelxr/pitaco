@@ -12,9 +12,29 @@ function M.review()
 	local language = config.get_language()
 	local additional_instruction = config.get_additional_instruction()
 	local buffer_number = utils.get_buffer_number()
+  local provider = config.get_provider()
+  local model
+  local messages
+  local system
+
+  if provider == "openai" then
+    model = config.get_openai_model()
+		messages = vim.deepcopy(fewshot.messages)
+    table.insert(messages, 1, {
+      role = "system",
+      content = config.get_system_prompt(),
+    })
+  elseif provider == "anthropic" then
+    model = config.get_anthropic_model()
+    system = config.get_system_prompt()
+  else
+    print("Invalid provider: " .. provider)
+    return
+  end
 
 	local request_table = {
-		model = config.get_openai_model(),
+		model = model,
+    system = system,
 		messages = fewshot.messages,
 	}
 
