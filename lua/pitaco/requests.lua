@@ -93,32 +93,44 @@ function M.prepare_requests()
 	return all_requests, num_requests, #lines
 end
 
-function M.make_requests(params)
-	if #params.requests == 0 then
+function M.make_requests(namespace, requests, starting_request_count, request_index, line_count)
+	if #requests == 0 then
 		return nil
 	end
 
-	progress.show_buffer_progress(params)
+	progress.show_buffer_progress({
+		namespace = namespace,
+		requests = requests,
+		starting_request_count = starting_request_count,
+		request_index = request_index,
+		line_count = line_count
+	})
 
-	local request_json = table.remove(params.requests, 1)
-	params.request_index = params.request_index + 1
+	local request_json = table.remove(requests, 1)
+	request_index = request_index + 1
 
 	progress.update_progress(
-		params.handle,
-		"Processing request " .. params.request_index .. " of " .. params.starting_request_count,
-		params.request_index,
-		params.starting_request_count
+		nil, -- handle needs to be passed if needed
+		"Processing request " .. request_index .. " of " .. starting_request_count,
+		request_index,
+		starting_request_count
 	)
 
 	vim.defer_fn(function()
 		local response = openai.request(request_json)
 
 		if response then
-			M.parse_response(response, params)
+			M.parse_response(response, {
+				namespace = namespace,
+				handle = nil, -- update if handle is needed
+				starting_request_count = starting_request_count,
+				request_index = request_index,
+				line_count = line_count
+			})
 		end
 
 		if params.request_index < params.starting_request_count + 1 then
-			M.make_requests(params)
+			M.make_requests(namespace, requests, starting_request_count, request_index, line_count)
 		end
 	end, 100)
 end
