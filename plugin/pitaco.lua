@@ -99,7 +99,6 @@ local function prepare_code_snippet(buf_nr, starting_line_number, ending_line_nu
 	return text
 end
 
-local pitaco_callback
 local function pitaco_send_from_request_queue(callback_table)
 	if #callback_table.requests == 0 then
 		return nil
@@ -130,17 +129,9 @@ local function pitaco_send_from_request_queue(callback_table)
 		callback_table.starting_request_count
 	)
 
-	local response = openai.request(request_json)
-	pitaco_callback(response, callback_table)
-end
-
-function pitaco_callback(response_table, callback_table)
-	if response_table ~= nil then
-		if callback_table.starting_request_count == 1 then
-			parse_response(response_table, callback_table.buf_nr, callback_table)
-		else
-			parse_response(response_table, callback_table.buf_nr, callback_table)
-		end
+	local response_table = openai.request(request_json)
+	if response_table then
+		parse_response(response_table, callback_table.buf_nr, callback_table)
 	end
 
 	if callback_table.request_index < callback_table.starting_request_count + 1 then
