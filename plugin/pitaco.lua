@@ -14,9 +14,9 @@ local progress = require("pitaco.progress")
 local openai = require("pitaco.openai")
 local config = require("pitaco.config")
 
-local function parse_response(response, buf_nr, callback_table)
-	local diagnostics = {}
+local function parse_response(response, buffer_number, callback_table)
 	local lines = vim.split(response.choices[1].message.content, "\n")
+	local diagnostics = {}
 	local suggestions = {}
 
 	for _, line in ipairs(lines) do
@@ -28,7 +28,7 @@ local function parse_response(response, buf_nr, callback_table)
 	end
 
 	if #suggestions ~= 0 then
-		complete_progress(
+		progress.complete_progress(
 			callback_table.handle,
 			#suggestions .. " suggestion(s) using " .. response.usage.total_tokens .. " tokens"
 		)
@@ -57,9 +57,10 @@ local function parse_response(response, buf_nr, callback_table)
 		})
 	end
 
-	vim.diagnostic.set(pitaco_namespace, buf_nr, diagnostics, {})
+	vim.diagnostic.set(pitaco_namespace, buffer_number, diagnostics, {})
 end
 
+-- move the prepare_code_snippet function to a file AI!
 local function prepare_code_snippet(buf_nr, starting_line_number, ending_line_number)
 	local lines = vim.api.nvim_buf_get_lines(buf_nr, starting_line_number - 1, ending_line_number, false)
 	local max_digits = string.len(tostring(#lines + starting_line_number))
@@ -82,9 +83,9 @@ local function pitaco_send_from_request_queue(callback_table)
 
 	if callback_table.request_index == 0 then
 		if callback_table.starting_request_count == 1 then
-			handle = show_progress("Pitaco", "Sending " .. buf_name .. " (" .. callback_table.line_count .. " lines)")
+			handle = progress.show_progress("Pitaco", "Sending " .. buf_name .. " (" .. callback_table.line_count .. " lines)")
 		else
-			handle = show_progress(
+			handle = progress.show_progress(
 				"Pitaco",
 				"Sending " .. buf_name .. " (split into " .. callback_table.starting_request_count .. " requests)"
 			)
@@ -95,7 +96,7 @@ local function pitaco_send_from_request_queue(callback_table)
 	local request_json = table.remove(callback_table.requests, 1)
 	callback_table.request_index = callback_table.request_index + 1
 
-	update_progress(
+	progress.update_progress(
 		callback_table.handle,
 		"Processing request " .. callback_table.request_index .. " of " .. callback_table.starting_request_count,
 		callback_table.request_index,
@@ -124,13 +125,13 @@ vim.api.nvim_create_user_command("Pitaco", function()
 		messages = fewshot.messages,
 	}
 
-	local requests = {}
+    local requests = {}
 
-	for i = 1, num_requests do
-		local starting_line_number = (i - 1) * split_threshold + 1
-		local text = prepare_code_snippet(buf_nr, starting_line_number, starting_line_number + split_threshold - 1)
-		local language = config.get_language()
-		local additional_instruction = config.get_additional_instruction()
+    for i = 1, num_requests do
+        local starting_line_number = (i - 1) * split_threshold + 1
+        local text = utils.prepare_code_snippet(buf_nr, starting_line_number, starting_line_number + split_threshold - 1)
+        local language = config.get_language()
+        local additional_instruction = config.get_additional_instruction()
 
 		if additional_instruction ~= "" then
 			text = text .. "\n" .. additional_instruction
