@@ -100,15 +100,17 @@ function M.make_requests(params)
 		params.starting_request_count
 	)
 
-	local response = openai.request(request_json)
+	vim.defer_fn(function()
+		local response = openai.request(request_json)
 
-	if response then
-		M.parse_response(response, params)
-	end
+		if response then
+			M.parse_response(response, params)
+		end
 
-	if params.request_index < params.starting_request_count + 1 then
-		M.make_requests(params)
-	end
+		if params.request_index < params.starting_request_count + 1 then
+			M.make_requests(params)
+		end
+	end, 100)
 end
 
 return M

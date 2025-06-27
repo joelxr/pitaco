@@ -19,6 +19,13 @@ function M.update_progress(handle, message, current_index, total_requests)
 		message = message,
 		percentage = percentage,
 	})
+
+	vim.defer_fn(function()
+		handle:report({
+			message = message,
+			percentage = percentage,
+		})
+	end, 100)
 end
 
 function M.complete_progress(handle, message)
