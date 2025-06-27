@@ -67,19 +67,7 @@ local function make_requests(params)
 	end
 
 	local buf_name = utils.get_buf_name(params.buf_nr)
-	local handle
-
-	if params.request_index == 0 then
-		if params.starting_request_count == 1 then
-			handle = progress.show_progress("Pitaco", "Sending " .. buf_name .. " (" .. params.line_count .. " lines)")
-		else
-			handle = progress.show_progress(
-				"Pitaco",
-				"Sending " .. buf_name .. " (split into " .. params.starting_request_count .. " requests)"
-			)
-		end
-		params.handle = handle
-	end
+	progress.initialize_progress(params, buf_name)
 
 	local request_json = table.remove(params.requests, 1)
 	params.request_index = params.request_index + 1

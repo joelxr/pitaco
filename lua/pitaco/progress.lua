@@ -28,4 +28,19 @@ function M.complete_progress(handle, message)
     })
 end
 
+function M.initialize_progress(params, buf_name)
+    local handle
+    if params.request_index == 0 then
+        if params.starting_request_count == 1 then
+            handle = M.show_progress("Pitaco", "Sending " .. buf_name .. " (" .. params.line_count .. " lines)")
+        else
+            handle = M.show_progress(
+                "Pitaco",
+                "Sending " .. buf_name .. " (split into " .. params.starting_request_count .. " requests)"
+            )
+        end
+        params.handle = handle
+    end
+end
+
 return M
