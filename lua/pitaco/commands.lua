@@ -4,13 +4,14 @@ local pitaco_namespace = vim.api.nvim_create_namespace("pitaco")
 local fewshot = require("pitaco.fewshot")
 local openai = require("pitaco.openai")
 local config = require("pitaco.config")
+local utils = require("pitaco.utils")
 local requests = require("pitaco.requests")
 
 function M.review()
 	local split_threshold = config.get_split_threshold()
 	local language = config.get_language()
 	local additional_instruction = config.get_additional_instruction()
-	local buffer_number = vim.api.nvim_get_current_buf()
+	local buffer_number = utils.get_buffer_number()
 
 	local request_table = {
 		model = openai.get_model(),

@@ -16,4 +16,8 @@ function M.get_buf_name(buf_nr)
     return vim.fn.fnamemodify(vim.fn.bufname(buf_nr), ":t")
 end
 
+function M.get_buffer_number()
+    return vim.api.nvim_get_current_buf()
+end
+
 return M
