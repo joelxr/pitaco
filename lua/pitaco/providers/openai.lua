@@ -1,7 +1,6 @@
 local M = {}
-local curl = require("plenary.curl")
 
-local function get_api_key()
+function M.get_api_key()
 	local key = os.getenv("OPENAI_API_KEY")
 
 	if key ~= nil then
@@ -13,8 +12,69 @@ local function get_api_key()
 	return nil
 end
 
+function M.get_model()
+	local model = vim.g.pitaco_openai_model_id
+
+	if model ~= nil then
+		return model
+	end
+
+	if vim.g.pitaco_model_id_complained == nil then
+		local message = "No model specified. Please set openai_model_id in the setup table. Using default value for now"
+		vim.fn.confirm(message, "&OK", 1, "Warning")
+		vim.g.pitaco_model_id_complained = 1
+	end
+
+	return "gpt-4.1-mini"
+end
+
+function M.prepare_requests(messages)
+	local config = require("pitaco.config")
+	local utils = require("pitaco.utils")
+	local buffer_number = utils.get_buffer_number()
+	local split_threshold = config.get_split_threshold()
+	local language = config.get_language()
+	local additional_instruction = config.get_additional_instruction()
+	local lines = vim.api.nvim_buf_get_lines(buffer_number, 0, -1, false)
+	local model = M.get_model()
+
+	local num_requests = math.ceil(#lines / split_threshold)
+	local all_requests = {}
+	local request_table = {
+		model = model,
+		messages = messages,
+	}
+
+	for i = 1, num_requests do
+		local starting_line_number = (i - 1) * split_threshold + 1
+		local text =
+			utils.prepare_code_snippet(buffer_number, starting_line_number, starting_line_number + split_threshold - 1)
+
+		if additional_instruction ~= "" then
+			text = text .. "\n" .. additional_instruction
+		end
+
+		if language ~= "" and language ~= "english" then
+			text = text .. "\nRespond only in " .. language .. ", but keep the 'line=<num>:' part in english"
+		end
+
+		local temp_request_table = vim.deepcopy(request_table)
+
+		table.insert(temp_request_table.messages, {
+			role = "user",
+			content = text,
+		})
+
+		local request_json = vim.json.encode(temp_request_table)
+		all_requests[i] = request_json
+	end
+
+	return all_requests, num_requests, #lines
+end
+
 function M.request(json_data)
-	local api_key = get_api_key()
+	local curl = require("plenary.curl")
+	local api_key = M.get_api_key()
 
 	if api_key == nil then
 		return nil
@@ -41,6 +101,47 @@ function M.request(json_data)
 
 	local body = vim.fn.json_decode(response.body)
 	return body
+end
+
+function M.parse_response(response)
+	local lines = vim.split(response.choices[1].message.content, "\n")
+	local diagnostics = {}
+	local suggestions = {}
+
+	for _, line in ipairs(lines) do
+		if (string.sub(line, 1, 5) == "line=") or string.sub(line, 1, 6) == "lines=" then
+			table.insert(suggestions, line)
+		elseif #suggestions > 0 then
+			suggestions[#suggestions] = suggestions[#suggestions] .. "\n" .. line
+		end
+	end
+
+	for _, suggestion in ipairs(suggestions) do
+		local line_string = string.sub(suggestion, 6, string.find(suggestion, ":") - 1)
+		if string.find(line_string, "-") ~= nil then
+			line_string = string.sub(line_string, 1, string.find(line_string, "-") - 1)
+		end
+		local line_num = tonumber(line_string)
+
+		if line_num == nil then
+			line_num = 1
+		end
+
+		local message = string.sub(suggestion, string.find(suggestion, ":") + 1, string.len(suggestion))
+		if string.sub(message, 1, 1) == " " then
+			message = string.sub(message, 2, string.len(message))
+		end
+
+		table.insert(diagnostics, {
+			lnum = line_num - 1,
+			col = 0,
+			message = message,
+			severity = vim.diagnostic.severity.INFO,
+			source = "pitaco",
+		})
+	end
+
+	return diagnostics
 end
 
 return M

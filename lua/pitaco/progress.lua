@@ -37,7 +37,8 @@ function M.complete_progress(handle, message)
 end
 
 function M.show_buffer_progress(params)
-	local buf_name = utils.get_buf_name(params.buf_nr)
+  local buffer_number = utils.get_buffer_number()
+	local buf_name = utils.get_buf_name(buffer_number)
 	local handle
 
 	if params.request_index == 0 then
