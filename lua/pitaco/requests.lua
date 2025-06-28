@@ -1,4 +1,5 @@
 local progress = require("pitaco.progress")
+local utils = require("pitaco.utils")
 
 local M = {}
 
@@ -54,7 +55,8 @@ function M.make_requests(namespace, provider, requests, starting_request_count, 
 				progress.complete_progress(params.handle, "Error parsing response")
 				return
 			end
-			vim.diagnostic.set(namespace, params.buffer_number, diagnostics, {})
+
+			vim.diagnostic.set(namespace, utils.get_buffer_number(), diagnostics)
 		end
 
 		if request_index < starting_request_count + 1 then
