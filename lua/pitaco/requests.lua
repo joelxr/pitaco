@@ -30,10 +30,10 @@ function M.make_requests(namespace, provider, requests, starting_request_count, 
 	vim.defer_fn(function()
 		local ok, response = pcall(provider.request, request_json)
 
-		if not ok then  -- Error occurred in provider.request
+		if not ok then
 			progress.update_progress(
 				params.handle,
-				"Failed: " .. tostring(response),
+				tostring(response),
 				request_index,
 				starting_request_count
 			)
@@ -43,7 +43,8 @@ function M.make_requests(namespace, provider, requests, starting_request_count, 
 
 		if response then
 			local parse_ok, diagnostics = pcall(provider.parse_response, response)
-			if not parse_ok then  -- Error occurred in parse_response
+
+			if not parse_ok then
 				progress.update_progress(
 					params.handle,
 					"Failed to parse response",

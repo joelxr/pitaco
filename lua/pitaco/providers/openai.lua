@@ -90,13 +90,11 @@ function M.request(json_data)
 	})
 
 	if not ok then
-		print("Request failed:", response)
-		return
+		error("Request failed: " .. response.body)
 	end
 
 	if response.status >= 400 then
-		print("HTTP error:", response.status, response.body)
-		return
+		error("HTTP error: " .. response.body)
 	end
 
 	local body = vim.fn.json_decode(response.body)
