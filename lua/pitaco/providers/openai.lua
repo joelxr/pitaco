@@ -40,9 +40,21 @@ function M.prepare_requests(messages)
 
 	local num_requests = math.ceil(#lines / split_threshold)
 	local all_requests = {}
+
+  local messages_with_system_prompt = {
+    {
+      role = "system",
+      content = config.get_system_prompt(),
+    },
+  }
+
+  for _, message in ipairs(messages) do
+    table.insert(messages_with_system_prompt, message)
+  end
+
 	local request_table = {
 		model = model,
-		messages = messages,
+		messages = messages_with_system_prompt,
 	}
 
 	for i = 1, num_requests do
