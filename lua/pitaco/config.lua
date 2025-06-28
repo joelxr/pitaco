@@ -1,5 +1,37 @@
 local M = {}
 
+function M.get_system_prompt()
+	local default_system_prompt = [[
+You must detect issues in the code snippet and help to avoid bugs with your review and suggestions, go step by step in the provided code snippet
+to understand the problem and suggest a solution.
+Some examples of issues to consider:
+- Accessing a variable that is not defined
+- Using a variable before it is defined
+- Wrong usage of a function
+- Infinite loops
+- Heavy calls to database or IO in a loop
+- Code that is not optimized for performance
+You must identify any readability issues in the code snippet.
+Some readability issues to consider:
+- Unclear naming
+- Unclear purpose
+- Redundant or obvious comments
+- Lack of comments
+- Long or complex one liners
+- Too much nesting
+- Long variable names
+- Inconsistent naming and code style
+- Code repetition
+- Suggest always early returns
+- Suggest simpler conditionals on if-else statements
+- Check typos and selling of variables, functions, etc.
+You may identify additional problems. The user submits a small section of code from a larger file.
+Only list lines with readability issues, in the format line=<num>: <issue and proposed solution>
+Your commentary must fit on a single line
+  ]]
+	return vim.g.pitaco_system_prompt or default_system_prompt
+end
+
 function M.get_language()
 	return vim.g.pitaco_language
 end
@@ -10,6 +42,10 @@ end
 
 function M.get_split_threshold()
 	return vim.g.pitaco_split_threshold
+end
+
+function M.get_provider()
+	return vim.g.pitaco_provider
 end
 
 function M.get_openai_model()
@@ -26,6 +62,23 @@ function M.get_openai_model()
 	end
 
 	return "gpt-4.1-mini"
+end
+
+function M.get_anthropic_model()
+	local model = vim.g.pitaco_anthropic_model_id
+
+	if model ~= nil then
+		return model
+	end
+
+	if vim.g.pitaco_anthropic_model_id_complained == nil then
+		local message =
+			"No Anthropic model specified. Please set anthropic_model_id in the setup table. Using default value for now"
+		vim.fn.confirm(message, "&OK", 1, "Warning")
+		vim.g.pitaco_anthropic_model_id_complained = 1
+	end
+
+	return "claude-v1"
 end
 
 return M
