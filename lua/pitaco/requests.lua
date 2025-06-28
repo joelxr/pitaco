@@ -28,17 +28,39 @@ function M.make_requests(namespace, provider, requests, starting_request_count, 
 	)
 
 	vim.defer_fn(function()
-		local response = provider.request(request_json)
+		local ok, response = pcall(provider.request, request_json)
+
+		if not ok then  -- Error occurred in provider.request
+			progress.update_progress(
+				params.handle,
+				"Failed: " .. tostring(response),
+				request_index,
+				starting_request_count
+			)
+			progress.complete_progress(params.handle, "Error making request")
+			return
+		end
 
 		if response then
-			provider.parse_response(response)
+			local parse_ok, diagnostics = pcall(provider.parse_response, response)
+			if not parse_ok then  -- Error occurred in parse_response
+				progress.update_progress(
+					params.handle,
+					"Failed to parse response",
+					request_index,
+					starting_request_count
+				)
+				progress.complete_progress(params.handle, "Error parsing response")
+				return
+			end
+			vim.diagnostic.set(namespace, params.buffer_number, diagnostics, {})
 		end
 
 		if request_index < starting_request_count + 1 then
 			M.make_requests(namespace, provider, requests, starting_request_count, request_index, line_count)
+		else
+			progress.complete_progress(params.handle, "Done!")
 		end
-
-		progress.complete_progress(params.handle, "Done!")
 	end, 100)
 end
 
