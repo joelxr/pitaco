@@ -37,6 +37,8 @@ function M.make_requests(namespace, provider, requests, starting_request_count, 
 		if request_index < starting_request_count + 1 then
 			M.make_requests(namespace, provider, requests, starting_request_count, request_index, line_count)
 		end
+
+		progress.complete_progress(params.handle, "Done!")
 	end, 100)
 end
 
