@@ -73,7 +73,8 @@ require('pitaco').setup({
     openai_model_id = "gpt-4.1-mini",
     anthropic_model_id = "claude-3-5-haiku-latest",
     openrouter_model_id = "openrouter/deepseek/deepseek-chat-v3-0324:free",
-    provider = "anthropic", -- "openai", "anthropic", "openrouter"
+    ollama_model_id = "llama3.1",
+    provider = "anthropic", -- "openai", "anthropic", "openrouter", "ollama"
     language = "english",
     additional_instruction = nil,
     split_threshold = 100,
@@ -141,7 +142,7 @@ Contributions are welcome! Please fork the repository and submit a pull request.
 - [x] Integration with OpenRouter
 - [ ] Support for Gemini models
 - [ ] Integration with Deepseek
-- [ ] Support for Ollama models
+- [x] Support for Ollama models
 
 ## License 📄
 

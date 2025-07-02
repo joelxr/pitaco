@@ -65,19 +65,40 @@ function M.get_openai_model()
 end
 
 function M.get_openrouter_model()
-    local model = vim.g.pitaco_openrouter_model_id
+	local model = vim.g.pitaco_openrouter_model_id
 
-    if model ~= nil then
-        return model
-    end
+	if model ~= nil then
+		return model
+	end
 
-    if vim.g.pitaco_openrouter_model_id_complained == nil then
-        local message = "No OpenRouter model specified. Please set openrouter_model_id in the setup table. Using default value for now"
-        vim.fn.confirm(message, "&OK", 1, "Warning")
-        vim.g.pitaco_openrouter_model_id_complained = 1
-    end
+	if vim.g.pitaco_openrouter_model_id_complained == nil then
+		local message =
+			"No OpenRouter model specified. Please set openrouter_model_id in the setup table. Using default value for now"
+		vim.fn.confirm(message, "&OK", 1, "Warning")
+		vim.g.pitaco_openrouter_model_id_complained = 1
+	end
 
-    return "openrouter/deepseek/deepseek-chat-v3-0324:free"
+	return "openrouter/deepseek/deepseek-chat-v3-0324:free"
+end
+
+function M.get_ollama_model()
+	local model = vim.g.pitaco_ollama_model_id
+
+	if model ~= nil then
+		return model
+	end
+
+	if vim.g.pitaco_ollama_model_id_complained == nil then
+		local message = "No Ollama model specified. Using default llama3"
+		vim.fn.confirm(message, "&OK", 1, "Warning")
+		vim.g.pitaco_ollama_model_id_complained = 1
+	end
+
+	return "llama3.1"
+end
+
+function M.get_ollama_url()
+	return vim.g.pitaco_ollama_url or "http://localhost:11434"
 end
 
 function M.get_anthropic_model()
