@@ -19,13 +19,6 @@ function M.update_progress(handle, message, current_index, total_requests)
 		message = message,
 		percentage = percentage,
 	})
-
-	vim.defer_fn(function()
-		handle:report({
-			message = message,
-			percentage = percentage,
-		})
-	end, 100)
 end
 
 function M.complete_progress(handle, message)
@@ -36,22 +29,23 @@ function M.complete_progress(handle, message)
 	})
 end
 
-function M.show_buffer_progress(params)
+function M.show_buffer_progress(request_index, starting_request_count, line_count)
   local buffer_number = utils.get_buffer_number()
 	local buf_name = utils.get_buf_name(buffer_number)
 	local handle
 
-	if params.request_index == 0 then
-		if params.starting_request_count == 1 then
-			handle = M.show_progress("Pitaco", "Sending " .. buf_name .. " (" .. params.line_count .. " lines)")
+	if request_index == 0 then
+		if starting_request_count == 1 then
+			handle = M.show_progress("Pitaco", "Sending " .. buf_name .. " (" .. line_count .. " lines)")
 		else
 			handle = M.show_progress(
 				"Pitaco",
-				"Sending " .. buf_name .. " (split into " .. params.starting_request_count .. " requests)"
+				"Sending " .. buf_name .. " (split into " .. starting_request_count .. " requests)"
 			)
 		end
-		params.handle = handle
 	end
+	
+	return handle
 end
 
 return M
