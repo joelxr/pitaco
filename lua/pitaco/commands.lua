@@ -4,13 +4,22 @@ local provider_factory = require("pitaco.providers.factory")
 local config = require("pitaco.config")
 local utils = require("pitaco.utils")
 local requests = require("pitaco.requests")
-local fewshot = require("pitaco.fewshot") 
+local fewshot = require("pitaco.fewshot")
 local namespace = vim.api.nvim_create_namespace("pitaco")
 
 function M.review()
-  local provider = provider_factory.create_provider(config.get_provider())
-	local all_requests, num_requests, line_count = provider.prepare_requests(fewshot.messages)
-  requests.make_requests(namespace, provider, all_requests, num_requests, 0, line_count)
+	vim.schedule(function()
+		local provider = provider_factory.create_provider(config.get_provider())
+		local all_requests, num_requests, line_count = provider.prepare_requests(fewshot.messages)
+
+		-- Create async worker
+		local worker = vim.loop.new_async(function()
+			requests.make_requests(namespace, provider, all_requests, num_requests, 0, line_count)
+		end)
+
+		-- Schedule the request processing
+		worker:send()
+	end)
 end
 
 function M.clear()
