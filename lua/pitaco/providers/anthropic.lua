@@ -86,7 +86,6 @@ function M.prepare_requests(messages)
 	return all_requests, num_requests, #lines
 end
 
--- read openrouter.lua provider implementation of this and make below the same using caallback and vim.schedule AI!
 function M.request(json_data, callback)
 	local curl = require("plenary.curl")
 	local api_key = M.get_api_key()
@@ -96,10 +95,10 @@ function M.request(json_data, callback)
 		return
 	end
 
-	local response = curl.post("https://api.anthropic.com/v1/messages", {
+	curl.post("https://api.anthropic.com/v1/messages", {
 		headers = {
 			["Content-Type"] = "application/json",
-			["anthropic-version"] = "2023-06-01", 
+			["anthropic-version"] = "2023-06-01",
 			["x-api-key"] = api_key,
 		},
 		body = json_data,
@@ -118,7 +117,7 @@ function M.request(json_data, callback)
 					callback(body, nil)
 				end
 			end)
-		end
+		end,
 	})
 end
 
