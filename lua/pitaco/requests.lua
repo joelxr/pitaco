@@ -39,7 +39,15 @@ function M.make_requests(namespace, provider, requests, starting_request_count, 
 			end
 
 			vim.schedule(function()
-				vim.diagnostic.set(namespace, utils.get_buffer_number(), diagnostics)
+        -- change this below to not replce the diagnostics of the buffer but accumulate them AI!
+				local buf = utils.get_buffer_number()
+				-- Get existing diagnostics and merge with new ones
+				local existing = vim.diagnostic.get(buf, {namespace = namespace}) or {}
+				for _, diag in ipairs(diagnostics) do
+					table.insert(existing, diag)
+				end
+				-- Set combined diagnostics
+				vim.diagnostic.set(namespace, buf, existing)
 			end)
 		end
 
