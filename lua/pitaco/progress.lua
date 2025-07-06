@@ -1,51 +1,31 @@
 local M = {}
-local progress = require("fidget.progress")
-local utils = require("pitaco.utils")
 
-function M.show_progress(title, message)
-	local handle = progress.handle.create({
-		title = title,
-		message = message,
-		percentage = 0,
-		lsp_client = { name = "pitaco" },
-	})
-	return handle
+local progress_state = {
+	percentage = 0,
+	current_request = 0,
+	total_requests = 0,
+	running = false,
+	message = "",
+}
+
+function M.stop()
+	progress_state.running = false
+  progress_state.percentage = 100
+  progress_state.current_request = 0
+  progress_state.total_requests = 0
+  progress_state.message = ""
 end
 
-function M.update_progress(handle, message, current_index, total_requests)
-	local percentage = math.floor((current_index / total_requests) * 100)
-
-	handle:report({
-		message = message,
-		percentage = percentage,
-	})
+function M.update(message, current_request, total_requests)
+  progress_state.running = true
+	progress_state.percentage = math.floor((current_request / total_requests) * 100)
+	progress_state.current_request = current_request
+	progress_state.total_requests = total_requests
+	progress_state.message = message
 end
 
-function M.complete_progress(handle, message)
-	handle:finish()
-	handle:report({
-		message = message,
-		percentage = 100,
-	})
-end
-
-function M.show_buffer_progress(request_index, starting_request_count, line_count)
-  local buffer_number = utils.get_buffer_number()
-	local buf_name = utils.get_buf_name(buffer_number)
-	local handle
-
-	if request_index == 0 then
-		if starting_request_count == 1 then
-			handle = M.show_progress("Pitaco", "Sending " .. buf_name .. " (" .. line_count .. " lines)")
-		else
-			handle = M.show_progress(
-				"Pitaco",
-				"Sending " .. buf_name .. " (split into " .. starting_request_count .. " requests)"
-			)
-		end
-	end
-	
-	return handle
+function M.get_state()
+	return progress_state
 end
 
 return M

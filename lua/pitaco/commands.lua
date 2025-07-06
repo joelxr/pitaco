@@ -8,13 +8,9 @@ local fewshot = require("pitaco.fewshot")
 local namespace = vim.api.nvim_create_namespace("pitaco")
 
 function M.review()
-  local provider = provider_factory.create_provider(config.get_provider())
-  local all_requests, num_requests, line_count = provider.prepare_requests(fewshot.messages)
-  
-  -- Use defer_fn to schedule the request processing after the current event loop cycle
-  vim.defer_fn(function()
-    requests.make_requests(namespace, provider, all_requests, num_requests, 0, line_count)
-  end, 0)
+	local provider = provider_factory.create_provider(config.get_provider())
+	local all_requests, num_requests, line_count = provider.prepare_requests(fewshot.messages)
+  requests.make_requests(namespace, provider, all_requests, num_requests, 0, line_count)
 end
 
 function M.clear()

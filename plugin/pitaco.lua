@@ -1,5 +1,5 @@
 -- This is a plugin for the Neovim text editor
--- Author: Joel
+-- Author: Joel Xavier Rocha <joelxr@gmail.com>
 -- License: MIT
 -- Source: https://github.com/joelxr/pitaco
 
