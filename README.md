@@ -42,8 +42,9 @@ Pitaco has the following dependencies:
 Once installed, you can use the following commands to interact with Pitaco:
 
 - `:Pitaco` - Ask Pitaco to review your code.
-- `:PitacoClear` - Clear the current review.
-- `:PitacoClearLine` - Clear the current review for the current line.
+  - You can also use `review` as a subcommand.
+- `:Pitaco clear` - Clear the current review.
+- `:Pitaco clearLine` - Clear the current review for the current line.
 
 ## Configuration ⚙️
 
