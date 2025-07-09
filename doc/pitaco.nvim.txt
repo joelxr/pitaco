@@ -1,0 +1,279 @@
+*pitaco.nvim.txt*           For NVIM v0.8.0          Last change: 2025 July 09
+
+==============================================================================
+Table of Contents                              *pitaco.nvim-table-of-contents*
+
+1. Pitaco Neovim Plugin 🚀           |pitaco.nvim-pitaco-neovim-plugin-🚀|
+  - Features ✨          |pitaco.nvim-pitaco-neovim-plugin-🚀-features-✨|
+  - Installation 📦|pitaco.nvim-pitaco-neovim-plugin-🚀-installation-📦|
+  - Usage 🛠️        |pitaco.nvim-pitaco-neovim-plugin-🚀-usage-🛠️|
+  - Configuration ⚙️|pitaco.nvim-pitaco-neovim-plugin-🚀-configuration-⚙️|
+  - Contributing 🤝|pitaco.nvim-pitaco-neovim-plugin-🚀-contributing-🤝|
+  - Roadmap 🛣️    |pitaco.nvim-pitaco-neovim-plugin-🚀-roadmap-🛣️|
+  - License 📄          |pitaco.nvim-pitaco-neovim-plugin-🚀-license-📄|
+  - Acknowledgments 🙏|pitaco.nvim-pitaco-neovim-plugin-🚀-acknowledgments-🙏|
+
+==============================================================================
+1. Pitaco Neovim Plugin 🚀           *pitaco.nvim-pitaco-neovim-plugin-🚀*
+
+Welcome to the **Pitaco** Neovim plugin! This is an experimental plugin
+designed to provide you with an AI reviewer right inside your Neovim editor.
+With Pitaco, you can anticipate issues and improve your code before pushing to
+remote repositories.
+
+
+FEATURES ✨              *pitaco.nvim-pitaco-neovim-plugin-🚀-features-✨*
+
+- **Code Review**: Get feedback on your code.
+- **AI-Powered Suggestions**: Leverage LLMs to enhance your coding practices.
+- **Seamless Integration**: Works smoothly within Neovim.
+
+
+  **Note**: Pitaco uses the native Neovim diagnostics API, making it easy to
+  integrate with other plugins such as `folke/trouble.nvim` for enhanced
+  diagnostics visualization.
+
+INSTALLATION 📦    *pitaco.nvim-pitaco-neovim-plugin-🚀-installation-📦*
+
+To install Pitaco, use your preferred Neovim plugin manager. For example, with
+`lazy.nvim`:
+
+>lua
+    require('lazy').setup({
+        'joelxr/pitaco.nvim',
+        dependencies = {
+            'nvim-lua/plenary.nvim',
+            'j-hui/fidget.nvim',
+        },
+        config = function()
+            require('pitaco').setup({
+                -- minimal configuration, see below for more options
+                openai_model_id = "gpt-4.1-mini",
+                provider = "openai",
+            })
+        end,
+    })
+<
+
+Then, restart Neovim and run `:Lazy install`.
+
+Pitaco has the following dependencies: - `nvim-lua/plenary.nvim` - `curl`
+
+
+USAGE 🛠️            *pitaco.nvim-pitaco-neovim-plugin-🚀-usage-🛠️*
+
+Once installed, you can use the following commands to interact with Pitaco:
+
+- `:Pitaco` - Ask Pitaco to review your code.
+    - You can also use `review` as a subcommand.
+- `:Pitaco clear` - Clear the current review.
+- `:Pitaco clearLine` - Clear the current review for the current line.
+- `:Pitaco health` - Check if Pitaco is properly configured.
+
+
+CONFIGURATION ⚙️*pitaco.nvim-pitaco-neovim-plugin-🚀-configuration-⚙️*
+
+To use Pitaco, you need to set up one of the following environment variables,
+depending on your LLM API provider:
+
+- `OPENAI_API_KEY` - For OpenAI API.
+- `ANTHROPIC_API_KEY` - For Anthropic API.
+- `OPENROUTER_API_KEY` - For OpenRouter API.
+
+Those keys are required to authenticate requests. You can set it in your shell
+configuration file (e.g., `.bashrc`, `.zshrc`):
+
+Exmaple:
+
+>bash
+    export OPENAI_API_KEY="your-openai-api-key"
+    export ANTHROPIC_API_KEY="your-anthropic-api-key"
+    export OPENROUTER_API_KEY="your-openrouter-api-key"
+<
+
+
+  **Disclaimer**: Currently, Pitaco only supports those providers. However,
+  support for additional models is planned in the roadmap.
+You can configure Pitaco by adding the following to your Neovim configuration
+file:
+
+>lua
+    require('pitaco').setup({
+        openai_model_id = "gpt-4.1-mini",
+        anthropic_model_id = "claude-3-5-haiku-latest",
+        openrouter_model_id = "openrouter/deepseek/deepseek-chat-v3-0324:free",
+        ollama_model_id = "llama3.1",
+        provider = "anthropic", -- "openai", "anthropic", "openrouter", "ollama"
+        language = "english",
+        additional_instruction = nil,
+        split_threshold = 100,
+    })
+<
+
+
+DIAGNOSTICS UI ~
+
+If you want you can setup better UI for diagnostics on Neovim, you can: - use
+folke/trouble.nvim <https://github.com/folke/trouble.nvim> to show the
+diagnostics in a different panel and leverage all the features of it - have a
+mapping to `vim.diagnostic.open_float` to show the diagnostics in a floating
+window of the current line - setup the editor to display custom icons and
+colors for diagnostics - setup Pitaco to run when the buffer is loaded or saved
+(I would only recommend this if you are using a free model like the ones
+provided by OpenRouter)
+
+See example below of those options:
+
+>lua
+    -- Example of a mapping to show the diagnostics in the current line
+    vim.keymap.set("n", "<leader>do", vim.diagnostic.open_float)
+<
+
+>lua
+    -- Example of better diagnostics on buffer with icons and colors
+    vim.diagnostic.config({
+        signs = {
+            text = {
+                [vim.diagnostic.severity.ERROR] = " ",
+                [vim.diagnostic.severity.WARN] = " ",
+                [vim.diagnostic.severity.INFO] = " ",
+                [vim.diagnostic.severity.HINT] = "󰠠 ",
+            },
+            linehl = {
+                [vim.diagnostic.severity.ERROR] = "Error",
+                [vim.diagnostic.severity.WARN] = "Warn",
+                [vim.diagnostic.severity.INFO] = "Info",
+                [vim.diagnostic.severity.HINT] = "Hint",
+            },
+        },
+        severity_sort = true,
+        float = true,
+    })
+<
+
+
+LUALINE INTEGRATION ~
+
+You can use nvim-lualine/lualine.nvim
+<https://github.com/nvim-lualine/lualine.nvim> to display Pitaco’s progress
+in your statusline.
+
+>lua
+    -- Example of a lualine component to display Pitaco's progress
+    lualine_x = {
+        {
+            function()
+                -- It can be any kind of spinner
+                local spinner = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" }
+                local pitaco_state = require("pitaco.progress").get_state()
+    
+                if not pitaco_state.running then
+                    return ""
+                end
+    
+                return spinner[os.date("%S") % #spinner + 1]
+            end,
+        },
+<
+
+
+J-HUI/FIDGET.NVIM INTEGRATION ~
+
+You can use j-hui/fidget.nvim <https://github.com/j-hui/fidget.nvim> to display
+Pitaco’s progress in your statusline. You just need to use
+`PitacoProgressUpdate` and `PitacoProgressStop` autocmds to update the progress
+and stop the progress respectively.
+
+>lua
+    -- Example of a fidget component to display Pitaco's progress
+    local handle
+    
+    vim.api.nvim_create_autocmd("User", {
+        pattern = "PitacoProgressUpdate",
+        callback = function(args)
+            local progress = require("fidget.progress")
+            local data = args.data
+    
+            if not handle then
+                handle = progress.handle.create({
+                    title = "Pitaco",
+                    message = data.message,
+                    percentage = data.percentage,
+                    lsp_client = { name = "pitaco" },
+                })
+            else
+                handle:report({
+                    message = data.message,
+                    percentage = data.percentage,
+                })
+            end
+    
+            if not data.running then
+                if handle then
+                    handle:finish()
+                    handle = nil
+                end
+            end
+        end,
+    })
+    
+    vim.api.nvim_create_autocmd("User", {
+        pattern = "PitacoProgressStop",
+        callback = function()
+            if handle then
+                handle:finish()
+                handle = nil
+            end
+        end,
+    })
+    end,
+<
+
+
+RUN ON FILE OPEN ~
+
+>lua
+    -- Example of how to setup Pitaco to run on file open
+    vim.api.nvim_create_autocmd("BufRead", {
+        callback = function()
+            local fileType = vim.bo.filetype
+            local desiredFileTypes = { "javascript", "typescript", "vue", "html", "markdown", "python", "rust", "go", "java", "c", "cpp", "lua" }
+            
+            if vim.tbl_contains(desiredFileTypes, fileType) then
+                vim.cmd("Pitaco")
+            end
+        end,
+    })
+<
+
+
+CONTRIBUTING 🤝    *pitaco.nvim-pitaco-neovim-plugin-🚀-contributing-🤝*
+
+Contributions are welcome! Please fork the repository and submit a pull
+request.
+
+
+ROADMAP 🛣️        *pitaco.nvim-pitaco-neovim-plugin-🚀-roadmap-🛣️*
+
+- ☒ Support for Anthropic models
+- ☒ Integration with OpenRouter
+- ☐ Support for Gemini models
+- ☐ Integration with Deepseek
+- ☒ Support for Ollama models
+
+
+LICENSE 📄              *pitaco.nvim-pitaco-neovim-plugin-🚀-license-📄*
+
+This project is licensed under the MIT License.
+
+
+ACKNOWLEDGMENTS 🙏*pitaco.nvim-pitaco-neovim-plugin-🚀-acknowledgments-🙏*
+
+Thanks to the Neovim community and all contributors for their support.
+
+A big thanks to james1236/backseat.nvim
+<https://github.com/james1236/backseat.nvim> for inspiration.
+
+Generated by panvimdoc <https://github.com/kdheepak/panvimdoc>
+
+vim:tw=78:ts=8:noet:ft=help:norl:
