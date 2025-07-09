@@ -86,15 +86,16 @@ function M.prepare_requests(messages)
 	return all_requests, num_requests, #lines
 end
 
-function M.request(json_data)
+function M.request(json_data, callback)
 	local curl = require("plenary.curl")
 	local api_key = M.get_api_key()
 
 	if api_key == nil then
-		return nil
+		callback(nil, "No API key")
+		return
 	end
 
-	local ok, response = pcall(curl.post, "https://api.anthropic.com/v1/messages", {
+	curl.post("https://api.anthropic.com/v1/messages", {
 		headers = {
 			["Content-Type"] = "application/json",
 			["anthropic-version"] = "2023-06-01",
@@ -102,18 +103,22 @@ function M.request(json_data)
 		},
 		body = json_data,
 		timeout = 30000, -- 30s
+		callback = function(response)
+			if response.status >= 400 then
+				callback(nil, "HTTP error: " .. response.body)
+				return
+			end
+
+			vim.schedule(function()
+				local ok, body = pcall(vim.fn.json_decode, response.body)
+				if not ok then
+					callback(nil, "Failed to decode response: " .. tostring(body))
+				else
+					callback(body, nil)
+				end
+			end)
+		end,
 	})
-
-	if not ok then
-		error("Request failed: " .. tostring(response))
-	end
-
-	if response.status >= 400 then
-		error("HTTP error: " .. tostring(response.body))
-	end
-
-	local body = vim.fn.json_decode(response.body)
-	return body
 end
 
 function M.parse_response(response)

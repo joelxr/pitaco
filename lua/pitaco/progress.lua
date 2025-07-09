@@ -1,57 +1,48 @@
 local M = {}
-local progress = require("fidget.progress")
-local utils = require("pitaco.utils")
 
-function M.show_progress(title, message)
-	local handle = progress.handle.create({
-		title = title,
-		message = message,
-		percentage = 0,
-		lsp_client = { name = "pitaco" },
-	})
-	return handle
+local progress_state = {
+	percentage = 0,
+	current_request = 0,
+	total_requests = 0,
+	running = false,
+	message = "",
+}
+
+function M.stop()
+	progress_state.running = false
+	progress_state.percentage = 100
+	progress_state.current_request = 0
+	progress_state.total_requests = 0
+	progress_state.message = ""
+
+  vim.api.nvim_exec_autocmds("User", {
+    pattern = "PitacoProgressStop",
+    modeline = false,
+  })
 end
 
-function M.update_progress(handle, message, current_index, total_requests)
-	local percentage = math.floor((current_index / total_requests) * 100)
+function M.update(message, current_request, total_requests)
+	progress_state.running = current_request <= total_requests
+	progress_state.percentage = math.floor((current_request / total_requests) * 100)
+	progress_state.current_request = current_request
+	progress_state.total_requests = total_requests
+	progress_state.message = message
 
-	handle:report({
-		message = message,
-		percentage = percentage,
-	})
-
-	vim.defer_fn(function()
-		handle:report({
+	vim.api.nvim_exec_autocmds("User", {
+		pattern = "PitacoProgressUpdate",
+		modeline = false,
+		data = {
 			message = message,
-			percentage = percentage,
-		})
-	end, 100)
-end
-
-function M.complete_progress(handle, message)
-	handle:finish()
-	handle:report({
-		message = message,
-		percentage = 100,
+			current_request = current_request,
+			total_requests = total_requests,
+			percentage = progress_state.percentage,
+	     running = progress_state.running,
+		}
 	})
 end
 
-function M.show_buffer_progress(params)
-  local buffer_number = utils.get_buffer_number()
-	local buf_name = utils.get_buf_name(buffer_number)
-	local handle
-
-	if params.request_index == 0 then
-		if params.starting_request_count == 1 then
-			handle = M.show_progress("Pitaco", "Sending " .. buf_name .. " (" .. params.line_count .. " lines)")
-		else
-			handle = M.show_progress(
-				"Pitaco",
-				"Sending " .. buf_name .. " (split into " .. params.starting_request_count .. " requests)"
-			)
-		end
-		params.handle = handle
-	end
+function M.get_state()
+	return progress_state
 end
 
 return M
