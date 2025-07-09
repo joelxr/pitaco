@@ -5,6 +5,7 @@ local M = {}
 
 function M.make_requests(namespace, provider, requests, starting_request_count, request_index, line_count)
 	if #requests == 0 then
+    progress.stop()
 		return nil
 	end
 

@@ -35,7 +35,6 @@ Then, restart Neovim and run `:Lazy install`.
 
 Pitaco has the following dependencies:
 - `nvim-lua/plenary.nvim`
-- `j-hui/fidget.nvim`
 - `curl`
 
 ## Usage 🛠️
@@ -81,7 +80,7 @@ require('pitaco').setup({
 })
 ```
 
-### Diagnostics UI (Optional)
+### Diagnostics UI
 
 If you want you can setup better UI for diagnostics on Neovim, you can:
  - use [folke/trouble.nvim](https://github.com/folke/trouble.nvim) to show the diagnostics in a different panel and leverage all the features of it
@@ -117,6 +116,80 @@ vim.diagnostic.config({
     float = true,
 })
 ```
+
+### `lualine` integration
+
+You can use [nvim-lualine/lualine.nvim](https://github.com/nvim-lualine/lualine.nvim) to display Pitaco's progress in your statusline.
+
+```lua
+-- Example of a lualine component to display Pitaco's progress
+lualine_x = {
+    {
+        function()
+            -- It can be any kind of spinner
+            local spinner = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" }
+            local pitaco_state = require("pitaco.progress").get_state()
+
+            if not pitaco_state.running then
+                return ""
+            end
+
+            return spinner[os.date("%S") % #spinner + 1]
+        end,
+    },
+```
+
+### `j-hui/fidget.nvim` integration
+
+You can use [j-hui/fidget.nvim](https://github.com/j-hui/fidget.nvim) to display Pitaco's progress in your statusline.
+You just need to use `PitacoProgressUpdate` and `PitacoProgressStop` autocmds to update the progress and stop the progress respectively.
+
+```lua
+-- Example of a fidget component to display Pitaco's progress
+local handle
+
+vim.api.nvim_create_autocmd("User", {
+    pattern = "PitacoProgressUpdate",
+    callback = function(args)
+        local progress = require("fidget.progress")
+        local data = args.data
+
+        if not handle then
+            handle = progress.handle.create({
+                title = "Pitaco",
+                message = data.message,
+                percentage = data.percentage,
+                lsp_client = { name = "pitaco" },
+            })
+        else
+            handle:report({
+                message = data.message,
+                percentage = data.percentage,
+            })
+        end
+
+        if not data.running then
+            if handle then
+                handle:finish()
+                handle = nil
+            end
+        end
+    end,
+})
+
+vim.api.nvim_create_autocmd("User", {
+    pattern = "PitacoProgressStop",
+    callback = function()
+        if handle then
+            handle:finish()
+            handle = nil
+        end
+    end,
+})
+end,
+```
+
+### Run on file open
 
 ```lua
 -- Example of how to setup Pitaco to run on file open
