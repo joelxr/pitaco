@@ -45,6 +45,7 @@ Once installed, you can use the following commands to interact with Pitaco:
   - You can also use `review` as a subcommand.
 - `:Pitaco clear` - Clear the current review.
 - `:Pitaco clearLine` - Clear the current review for the current line.
+- `:Pitaco comment` - Add a comment under the current line with the Pitaco diagnostics summary.
 - `:Pitaco health` - Check if Pitaco is properly configured.
 
 ## Configuration ⚙️

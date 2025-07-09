@@ -20,4 +20,65 @@ function M.get_buffer_number()
 	return vim.api.nvim_get_current_buf()
 end
 
+-- Get the appropriate comment syntax for a filetype
+function M.get_comment_syntax(filetype)
+	local comment_map = {
+		-- C-style languages
+		c = "// ",
+		cpp = "// ",
+		java = "// ",
+		javascript = "// ",
+		typescript = "// ",
+		go = "// ",
+		rust = "// ",
+		swift = "// ",
+		csharp = "// ",
+
+		-- Script languages
+		python = "# ",
+		ruby = "# ",
+		perl = "# ",
+		bash = "# ",
+		sh = "# ",
+		zsh = "# ",
+
+		-- Web languages
+		html = "<!-- ",
+		xml = "<!-- ",
+		css = "/* ",
+
+		-- Lisp-like languages
+		lisp = ";; ",
+		scheme = ";; ",
+		clojure = ";; ",
+
+		-- Others
+		lua = "-- ",
+		haskell = "-- ",
+		sql = "-- ",
+		vim = '" ',
+		tex = "% ",
+		matlab = "% ",
+		r = "# ",
+		php = "// ",
+	}
+
+	-- HTML-style comments need a closing tag
+	local html_style = { html = true, xml = true }
+
+	-- CSS-style comments need a closing tag
+	local css_style = { css = true }
+
+	local syntax = comment_map[filetype] or "-- " -- Default to Lua-style
+	local suffix = ""
+
+	if html_style[filetype] then
+		suffix = " -->"
+	elseif css_style[filetype] then
+		suffix = " */"
+	end
+
+	return syntax, suffix
+end
+
 return M

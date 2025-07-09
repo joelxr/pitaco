@@ -28,12 +28,14 @@ vim.api.nvim_create_user_command("Pitaco", function(opts)
 		commands.clear_line()
 	elseif action == "health" then
 		health.check()
+	elseif action == "comment" then
+		commands.comment()
 	else
 		vim.notify("Invalid Pitaco command: " .. action, vim.log.levels.ERROR)
 	end
 end, {
 	nargs = "*", -- Allows for subcommands
 	complete = function() -- Autocomplete suggestions
-		return { "review", "clear", "clearLine", "health" }
+		return { "review", "clear", "clearLine", "health", "comment" }
 	end,
 })
