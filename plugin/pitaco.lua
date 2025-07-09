@@ -15,6 +15,22 @@ pitaco.setup()
 
 local commands = require("pitaco.commands")
 
-vim.api.nvim_create_user_command("Pitaco", commands.review, {})
-vim.api.nvim_create_user_command("PitacoClear", commands.clear, {})
-vim.api.nvim_create_user_command("PitacoClearLine", commands.clear_line, {})
+-- Main Pitaco command with subcommands for review, clear, and clearLine
+vim.api.nvim_create_user_command("Pitaco", function(opts)
+    local action = opts.fargs[1] or "review" -- Default to 'review' if no subcommand is given
+    
+    if action == "review" then
+        commands.review()
+    elseif action == "clear" then
+        commands.clear()
+    elseif action == "clearLine" then
+        commands.clear_line()
+    else
+        vim.notify("Invalid Pitaco command: " .. action, vim.log.levels.ERROR)
+    end
+end, {
+    nargs = "*", -- Allows for subcommands
+    complete = function() -- Autocomplete suggestions
+        return { "review", "clear", "clearLine" }
+    end
+})
