@@ -64,6 +64,13 @@ function M.request(json_data, callback)
 	local curl = require("plenary.curl")
 	local config = require("pitaco.config")
 	local url = config.get_ollama_url() .. "/api/chat"
+	
+	-- Parse the JSON data to add stream: false
+	local ok, request_data = pcall(vim.fn.json_decode, json_data)
+	if ok then
+		request_data.stream = false
+		json_data = vim.fn.json_encode(request_data)
+	end
 
 	curl.post(url, {
 		headers = {
